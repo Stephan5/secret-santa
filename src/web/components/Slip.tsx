@@ -1,12 +1,11 @@
 import {Doodle} from './Doodle.tsx'
-import {Snowdrift} from './Snowdrift.tsx'
 import './Slip.css'
 
 // The name drawn, written on the back of a sheet of wrapping paper folded
 // in half and in half again, which unfolds (unless reduced motion is asked
 // for, or it's being shown again rather than for the first time): first
-// out to the right, then up, in a panel (red, as the name picker it
-// takes the place of). Who it's for is above it; the name's handwritten
+// out to the right, then up, in the panel the name was picked in
+// (GroupPage.tsx). Who it's for is above it; the name's handwritten
 // large, with a doodle beside it, across the middle of the sheet, over the across fold, so each half
 // of the sheet has its half of it (the top one hidden from screen readers,
 // so it's read once).
@@ -15,12 +14,10 @@ import './Slip.css'
 // right first: its right side swings over (`slip-right`, printed both
 // sides), leaving the bottom half's pattern showing, the top half folded
 // down over it (`slip-flap`); then that swings up.
-export function Slip({drawName, forName, receiverName, unfold}: {drawName: string, forName: string, receiverName: string, unfold: boolean}) {
+export function Slip({forName, receiverName, unfold}: {forName: string, receiverName: string, unfold: boolean}) {
     const size = {fontSize: `${nameSize(receiverName)}rem`}
     return (
-        <div className={unfold ? 'card card-red slip slip-unfold' : 'card card-red slip'} role="status" aria-live="polite">
-            <Snowdrift ledge="reveal" />
-            <h2 className="draw-title">{drawName}</h2>
+        <div className={unfold ? 'slip slip-unfold' : 'slip'}>
             <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheet">
                 <div className="slip-half slip-lower">

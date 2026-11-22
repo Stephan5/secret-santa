@@ -126,67 +126,83 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
         }
     }
 
+    const yes = useRef<HTMLButtonElement>(null)
+    const person = people.find(p => p.id === chosen)
+    const step = shown ? 'slip' : confirming && person ? 'confirm' : 'pick'
+    // (asking if it's you: straight to the answer)
+    useEffect(() => { if (step === 'confirm') yes.current?.focus() }, [step])
+
     if (checkingHere) return <Loading />
 
-    if (shown) {
-        return (
-            <section className="reveal">
-                <Slip drawName={draw.name} forName={shown.person.name} receiverName={shown.receiverName} unfold={shown.fresh} />
-                {remembered
-                    ? <p className="muted center">This device will remember, so you can come back any time to check.</p>
-                    : <p className="warning center">This browser can't remember it (private browsing?), and it can't be opened again anywhere else, so screenshot it or write it down.</p>}
-                <p className="center">
-                    <button type="button" className="link-button" onClick={() => { setShown(null); setChosen('') }}>
-                        Not {shown.person.name}? Choose another name
-                    </button>
-                </p>
-            </section>
-        )
-    }
-
-    const person = people.find(p => p.id === chosen)
+    // One panel through each step, picking your name, checking it's you and
+    // the slip: each in the same place, all but the one it's on hidden (and
+    // out of reach), so it's as big as the biggest, whichever it shows.
+    // (Till there's a slip, one with a stand-in name, never seen.)
+    const layer = (which: typeof step) => which === step ? 'reveal-layer' : 'reveal-layer reveal-layer-off'
+    const off = (which: typeof step) => which !== step || undefined
     return (
-        <section className="card card-red reveal-picker">
-            <Snowdrift ledge="reveal" />
-            <h2 className="draw-title">{draw.name}</h2>
-            {!confirming && (
-                <form className="stack" onSubmit={event => { event.preventDefault(); if (person) setConfirming(true) }}>
-                    <label className="field">
-                        <span className="label">Who are you?</span>
-                        <select value={chosen} onChange={e => { setChosen(e.target.value); setError(null) }} required>
-                            <option value="">Choose your name</option>
-                            {people.map(p => {
-                                const takenElsewhere = draw.revealedIds.includes(p.id) && !here.includes(p.id)
-                                return (
-                                    <option key={p.id} value={p.id} disabled={takenElsewhere}>
-                                        {p.name}{takenElsewhere ? ' (already opened)' : ''}
-                                    </option>
-                                )
-                            })}
-                        </select>
-                    </label>
-                    <ErrorNote message={error} />
-                    <button type="submit" className="button button-primary button-large" disabled={!person}>Show me who I'm buying for</button>
-                    <p className="hint">
-                        Each name opens on one device only. If yours says it's already been opened and it wasn't you,
-                        ask the organiser to reset it.
-                    </p>
-                </form>
-            )}
-            {confirming && person && (
-                <div className="stack confirm">
-                    <p className="confirm-question">You're <strong>{person.name}</strong>?</p>
-                    <p className="hint">Once it's open, only this device can see it.</p>
-                    <div className="row">
-                        <button type="button" className="button button-primary" onClick={open} disabled={busy} autoFocus>
-                            {busy ? 'Opening…' : 'Yes, show me'}
-                        </button>
-                        <button type="button" className="button" onClick={() => setConfirming(false)} disabled={busy}>No</button>
+        <section className="reveal">
+            <div className="card card-red reveal-panel">
+                <Snowdrift ledge="reveal" />
+                <h2 className="draw-title">{draw.name}</h2>
+                <div className="reveal-layers">
+                    <form className={`stack ${layer('pick')}`} inert={off('pick')} onSubmit={event => { event.preventDefault(); if (person) setConfirming(true) }}>
+                        <label className="field">
+                            <span className="label">Who are you?</span>
+                            <select value={chosen} onChange={e => { setChosen(e.target.value); setError(null) }} required>
+                                <option value="">Choose your name</option>
+                                {people.map(p => {
+                                    const takenElsewhere = draw.revealedIds.includes(p.id) && !here.includes(p.id)
+                                    return (
+                                        <option key={p.id} value={p.id} disabled={takenElsewhere}>
+                                            {p.name}{takenElsewhere ? ' (already opened)' : ''}
+                                        </option>
+                                    )
+                                })}
+                            </select>
+                        </label>
+                        <ErrorNote message={error} />
+                        <button type="submit" className="button button-primary button-large" disabled={!person}>Show me who I'm buying for</button>
+                        <p className="hint">
+                            Each name opens on one device only. If yours says it's already been opened and it wasn't you,
+                            ask the organiser to reset it.
+                        </p>
+                    </form>
+                    <div className={`stack confirm ${layer('confirm')}`} inert={off('confirm')}>
+                        <p className="confirm-question">You're <strong>{person?.name ?? longest(people)}</strong>?</p>
+                        <p className="hint">Once it's open, only this device can see it.</p>
+                        <div className="row">
+                            <button ref={yes} type="button" className="button button-primary" onClick={open} disabled={busy}>
+                                {busy ? 'Opening…' : 'Yes, show me'}
+                            </button>
+                            <button type="button" className="button" onClick={() => setConfirming(false)} disabled={busy}>No</button>
+                        </div>
+                    </div>
+                    <div className={layer('slip')} inert={off('slip')} role={shown ? 'status' : undefined} aria-live={shown ? 'polite' : undefined}>
+                        <Slip forName={shown?.person.name ?? longest(people)} receiverName={shown?.receiverName ?? longest(people)} unfold={!!shown?.fresh} />
                     </div>
                 </div>
+            </div>
+            {shown && (
+                <>
+                    {remembered
+                        ? <p className="muted center">This device will remember, so you can come back any time to check.</p>
+                        : <p className="warning center">This browser can't remember it (private browsing?), and it can't be opened again anywhere else, so screenshot it or write it down.</p>}
+                    <p className="center">
+                        <button type="button" className="link-button" onClick={() => { setShown(null); setChosen('') }}>
+                            Not {shown.person.name}? Choose another name
+                        </button>
+                    </p>
+                </>
             )}
         </section>
     )
+}
+
+// (the longest of their names: a stand-in for one not chosen yet, as wide
+// as any could be)
+function longest(people: Person[]): string {
+    return people.reduce((most, p) => p.name.length > most.length ? p.name : most, '')
 }
 
 function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {

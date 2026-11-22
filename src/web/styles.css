@@ -478,6 +478,13 @@ input[type='checkbox'] {
     font-size: 1.25rem;
     padding: 0.85rem 1.5rem;
     align-self: flex-start;
+    /* (onto two lines, rather than out of what it's in, where there isn't
+       room for it on one) */
+    max-width: 100%;
+    white-space: normal;
+    text-wrap: balance;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .button-small {

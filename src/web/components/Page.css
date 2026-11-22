@@ -189,10 +189,6 @@ main.column {
     margin-bottom: 0.75rem;
 }
 
-.slip .draw-title {
-    text-align: center;
-}
-
 .group-head {
     display: flex;
     flex-direction: column;
@@ -207,6 +203,37 @@ main.column {
 
 .progress {
     text-align: center;
+}
+
+/* The panel for finding out who you're buying for: the same size and shape
+   whether it's asking who you are, checking, or showing the slip (Slip.tsx).
+   Each step is laid in the same place, all but the one it's on hidden, so
+   it's as big as the biggest; each in the middle of the room under the
+   draw's name, which is over them all. */
+.reveal-panel .draw-title {
+    text-align: center;
+}
+
+.reveal-layers {
+    display: grid;
+    /* (as wide as the panel, whatever's in them) */
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* (and what's said under it, once it's opened) */
+.reveal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reveal-layer {
+    grid-area: 1 / 1;
+    align-self: center;
+}
+
+.reveal-layer-off {
+    visibility: hidden;
 }
 
 .confirm-question {
