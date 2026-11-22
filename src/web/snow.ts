@@ -156,8 +156,8 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         for (let pass = 0; pass < 4; pass++) {
             for (let j = Math.max(0, i - 12); j < Math.min(p.length - 1, i + 12); j++) {
                 const excess = p[j] - p[j + 1]
-                if (Math.abs(excess) > column * 0.45) {
-                    const move = (Math.abs(excess) - column * 0.45) / 2
+                if (Math.abs(excess) > column * 0.60) {
+                    const move = (Math.abs(excess) - column * 0.60) / 2
                     if (excess > 0) { p[j] -= move; p[j + 1] = Math.min(caps[j + 1], p[j + 1] + move) }
                     else { p[j + 1] -= move; p[j] = Math.min(caps[j], p[j] + move) }
                 }
@@ -286,7 +286,7 @@ function capsFor(columns: number, height: number, taper: number): number[] {
     const caps: number[] = []
     for (let i = 0; i < columns; i++) {
         const x = i * column
-        const lumps = 0.72 + 0.16 * Math.sin(x / 37 + 1.3) + 0.12 * Math.sin(x / 13 + 0.4)
+        const lumps = 0.76 + 0.18 * Math.sin(x / 45 + 1.3) + 0.06 * Math.sin(x / 22 + 0.4)
         const fromEnd = Math.min(i, columns - 1 - i) * column
         const thinning = Math.min(1, fromEnd / Math.max(1, taper)) ** 0.8
         caps[i] = height * 0.9 * lumps * thinning
