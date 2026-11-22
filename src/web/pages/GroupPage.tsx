@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import type {Draw, Group, Person} from '../../shared/api.ts'
-import {api, ApiFailure} from '../api.ts'
+import {adminSession, api, ApiFailure} from '../api.ts'
 import {ErrorNote, Loading, Page} from '../components/Page.tsx'
 import {Slip} from '../components/Slip.tsx'
 import {deviceToken, forgetReveal, rememberReveal, revealedHere} from '../device.ts'
@@ -59,6 +59,7 @@ export function GroupPage({groupId}: {groupId: string}) {
 }
 
 function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Draw, onRevealed: () => void, nameOf: (id: string) => string}) {
+    const [opened, setOpened] = useState(false)
     if (draw.status === 'pending') {
         return (
             <section className="card card-gold">
@@ -73,16 +74,17 @@ function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Dra
     const people = draw.participantIds.map(id => group.people.find(p => p.id === id)!).filter(Boolean)
     return (
         <>
-            <Reveal groupId={group.id} draw={draw} people={people} onRevealed={onRevealed} />
+            <Reveal groupId={group.id} draw={draw} people={people} onRevealed={onRevealed} onShown={setOpened} />
             <p className="progress muted">{looked} of {people.length} have opened theirs.</p>
             <Results draw={draw} nameOf={nameOf} />
+            {opened && !adminSession.get(group.id) && <StartYourOwn />}
         </>
     )
 }
 
 type Shown = {person: Person, receiverName: string, fresh: boolean}
 
-function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Draw, people: Person[], onRevealed: () => void}) {
+function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, draw: Draw, people: Person[], onRevealed: () => void, onShown: (shown: boolean) => void}) {
     const [chosen, setChosen] = useState('')
     const [confirming, setConfirming] = useState(false)
     const [busy, setBusy] = useState(false)
@@ -92,6 +94,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
     const [checkingHere, setCheckingHere] = useState(() => people.some(p => p.id === revealedHere(draw.id).at(-1)))
     const {remembered} = deviceToken()
     const here = revealedHere(draw.id)
+    useEffect(() => onShown(shown !== null), [shown, onShown])
 
     // If this browser has opened a name in this draw before, show it again
     // (once, on arriving: not each time the group reloads).
@@ -207,6 +210,21 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
 // as any could be)
 function longest(people: Person[]): string {
     return people.reduce((most, p) => p.name.length > most.length ? p.name : most, '')
+}
+
+// Once someone has their name, the nudge to run one for their other lot
+// (left out for the organiser, who already knows).
+function StartYourOwn() {
+    return (
+        <aside className="card card-green start-your-own">
+            <h2>Got another lot to sort?</h2>
+            <p>
+                Work, friends, the other side of the family, the group chat that still can't agree on a budget:
+                start a Secret Santa of your own. It takes a couple of minutes, and nobody needs an account.
+            </p>
+            <Link href={paths.create} className="button button-primary">Start your own Secret Santa</Link>
+        </aside>
+    )
 }
 
 function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {

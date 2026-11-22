@@ -265,6 +265,27 @@ main.column {
     visibility: hidden;
 }
 
+/* (after someone's opened their name: a nudge to start their own) */
+.start-your-own {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.start-your-own h2 {
+    font-size: 1.3rem;
+}
+
+.start-your-own p {
+    color: var(--muted);
+    text-wrap: pretty;
+}
+
+.start-your-own .button {
+    align-self: flex-start;
+}
+
 .confirm-question {
     font-family: var(--serif);
     font-size: 1.6rem;

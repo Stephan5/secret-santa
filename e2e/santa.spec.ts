@@ -39,6 +39,8 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
         const opened = await openName(browser, groupId, name)
         receivers.set(name, opened.receiver)
         expect(opened.errors).toEqual([])
+        // ...and is asked whether they've another lot to sort
+        await expect(opened.page.getByRole('link', {name: 'Start your own Secret Santa'})).toHaveAttribute('href', '/new')
         // Coming back, it's still there, without choosing again
         await opened.page.reload()
         await expect(opened.page.locator('.slip-name')).toHaveText(opened.receiver)
