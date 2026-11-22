@@ -22,17 +22,17 @@ const tune = {
     // (how fast they fall)
     fallSpeed: 1,
     // (how far each one drifts from side to side as it falls)
-    sway: 1,
+    sway: 3,
     // (how hard the wind pushes them all, back and forth, over time)
-    wind: 1,
+    wind: 5,
 
     // Settling
     // (how much snow each flake leaves on a ledge: how fast it builds up)
-    settling: 1,
+    settling: 1.25,
     // (how wide each flake's snow spreads where it lands)
-    spread: 1,
+    spread: 0.75,
     // (how fast the snow evens out as it lies; lower leaves it lumpier for longer)
-    smoothing: 1,
+    smoothing: 0.5,
     // (how much more of it lands where the drifts are deepest: 0, an even
     // blanket that only takes their shape as it fills up; 2, every bit of it
     // in proportion, as if it were swelling up into them)
@@ -45,7 +45,7 @@ const tune = {
     // page leaves for it above the footer, in Page.css)
     depth: 1,
     // (how high the drifts rise, and low they dip, along a ledge)
-    heaps: 1,
+    heaps: 1.5,
     // (how long each drift is, end to end)
     driftLength: 1,
     // (how far in from the ends it rounds off over)
@@ -53,7 +53,7 @@ const tune = {
     // (how far it hangs down over the front edge)
     hang: 1,
     // (how much it glows)
-    glow: 1,
+    glow: 0.75,
 }
 
 type Flake = {x: number, y: number, r: number, vy: number, swayAmp: number, swayFreq: number, phase: number, alpha: number}
@@ -278,44 +278,65 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         if (moved > 0.005) ledge.changed = true
     }
 
-    // How deep the snow looks in column i of a ledge: as deep as it is, but
-    // rounding off at the ends, as a pillow of snow does, over a length in
-    // keeping with how deep it is there: a short, low curl to a thin
-    // dusting, the ledge's whole taper once it's as deep as it gets.
-    function shown(ledge: Ledge, p: number[], i: number): number {
-        const fromEnd = Math.min(i, p.length - 1 - i) * column
-        const full = ledge.caps[i] > 0 ? Math.min(1, p[i] / ledge.caps[i]) : 0
-        const u = Math.min(1, fromEnd / Math.max(1, ledge.taper * full))
-        return p[i] * Math.sqrt(1 - (1 - u) ** 2)
-    }
-
     function drawLedge(ledge: Ledge) {
-        const p = piles.get(ledge.name)!.map((_, i, pile) => shown(ledge, pile, i))
-        const {base} = ledge
+        const p = piles.get(ledge.name)!
+        const {base, hang, caps, taper} = ledge
+        const n = p.length
         const c = ledge.context
         const {width: w, height: h} = ledge
         const x = (i: number) => Math.min(i * column, w)
+        const top = (i: number) => base[i] - p[i]
+        // (its underside: what it's lying on, less an even lip where it hangs
+        // a little over the front, growing as the snow above it does, so it
+        // only hangs its furthest once that's as deep as it gets: it builds
+        // up, not down)
+        const under = (i: number) => base[i] + hang * (caps[i] > 0 ? Math.min(1, p[i] / caps[i]) : 0)
+        // Each end rounds off, as a pillow of snow does, from its top, over
+        // the end and back under its lip: over a length in keeping with how
+        // deep it is near there, a short curl to a thin dusting, the ledge's
+        // whole taper once it's as deep as it gets. (Given as how many
+        // columns in from the end it starts.)
+        function capAt(end: number, inward: number): number {
+            const near = end + inward * Math.min(Math.floor((n - 1) / 2), Math.round(taper / column))
+            const full = caps[near] > 0 ? Math.min(1, p[near] / caps[near]) : 0
+            const length = Math.max((under(near) - top(near)) * 0.6, taper * full)
+            return Math.min(Math.floor((n - 1) / 2), Math.round(length / column))
+        }
+        const left = capAt(0, 1)
+        const right = n - 1 - capAt(n - 1, -1)
+        // (a quarter of an ellipse from (x0, y0), level, to (x1, y1), upright;
+        // or back, upright to level)
+        const k = 0.5523
+        const toUpright = (x0: number, y0: number, x1: number, y1: number) =>
+            c.bezierCurveTo(x0 + (x1 - x0) * k, y0, x1, y1 - (y1 - y0) * k, x1, y1)
+        const toLevel = (x0: number, y0: number, x1: number, y1: number) =>
+            c.bezierCurveTo(x0, y0 + (y1 - y0) * k, x1 + (x0 - x1) * k, y1, x1, y1)
+        // (where the end is roundest: near the bottom, so it's rounded over
+        // on top and sits on what it's on, just curling under at its lip)
+        const middle = (i: number) => top(i) + (under(i) - top(i)) * 0.85
+
         c.clearRect(0, 0, w, h)
         c.beginPath()
         // along the top of the snow...
-        c.moveTo(0, base[0] - p[0])
-        for (let i = 1; i < p.length; i++) {
+        c.moveTo(x(left), top(left))
+        for (let i = left + 1; i <= right; i++) {
             const midX = (x(i - 1) + x(i)) / 2
-            const midY = (base[i - 1] - p[i - 1] + base[i] - p[i]) / 2
-            c.quadraticCurveTo(x(i - 1), base[i - 1] - p[i - 1], midX, midY)
+            const midY = (top(i - 1) + top(i)) / 2
+            c.quadraticCurveTo(x(i - 1), top(i - 1), midX, midY)
         }
-        c.lineTo(w, base[p.length - 1] - p[p.length - 1])
-        // ...and back along its underside: what it's lying on, less an even
-        // lip where it hangs a little over the front, as deep as the snow
-        // above lets it be, so it eases away to nothing at the ends
-        const {hang} = ledge
-        const under = (i: number) => base[i] + hang * Math.min(1, p[i] / (hang * 3 + 1))
-        c.lineTo(w, under(p.length - 1))
-        for (let i = p.length - 2; i >= 0; i--) {
+        c.lineTo(x(right), top(right))
+        // ...round its far end...
+        toUpright(x(right), top(right), w, middle(right))
+        toLevel(w, middle(right), x(right), under(right))
+        // ...back along its underside...
+        for (let i = right - 1; i >= left; i--) {
             const midX = (x(i + 1) + x(i)) / 2
             c.quadraticCurveTo(x(i + 1), under(i + 1), midX, (under(i + 1) + under(i)) / 2)
         }
-        c.lineTo(0, under(0))
+        c.lineTo(x(left), under(left))
+        // ...and round its near end
+        toUpright(x(left), under(left), 0, middle(left))
+        toLevel(0, middle(left), x(left), top(left))
         c.closePath()
         const shade = c.createLinearGradient(0, 0, 0, h)
         shade.addColorStop(0, '#ffffff')
@@ -373,7 +394,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
                 const i = Math.min(p.length - 1, Math.floor(((flake.x - box.left) / box.width) * ledge.width / column))
                 const scale = box.height / ledge.height
                 const under = box.top + ledge.base[i] * scale
-                if (flake.y >= under - shown(ledge, p, i) * scale && flake.y <= under + 6) {
+                if (flake.y >= under - p[i] * scale && flake.y <= under + 6) {
                     deposit(ledge, i, flake.r)
                     flakes[n] = newFlake(false)
                     continue flakes
@@ -406,7 +427,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
 
 // How deep the snow can get along a ledge: most of its height, rising and
 // falling gently in long, low drifts. (Its ends round off as it's drawn:
-// shown.)
+// drawLedge.)
 function capsFor(columns: number, height: number): number[] {
     const caps: number[] = []
     for (let i = 0; i < columns; i++) {
