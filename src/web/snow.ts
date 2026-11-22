@@ -11,7 +11,9 @@
 // would slide off. With reduced motion asked for: a still scatter of
 // flakes, and the snow already settled.
 
-type Flake = {x: number, y: number, r: number, vy: number, swayAmp: number, swayFreq: number, phase: number, alpha: number}
+// (`lands`: whether it's near enough to settle on a ledge, rather than
+// falling past behind it)
+type Flake = {x: number, y: number, r: number, vy: number, swayAmp: number, swayFreq: number, phase: number, alpha: number, lands: boolean}
 
 type Ledge = {
     canvas: HTMLCanvasElement
@@ -59,6 +61,8 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             swayFreq: 0.4 + Math.random() * 0.8,
             phase: Math.random() * Math.PI * 2,
             alpha: 0.35 + (r / 3.5) * 0.6,
+            // (the small, far-off ones never; of the rest, a little over half)
+            lands: r > 1.2 && Math.random() < 0.6,
         }
     }
 
@@ -145,7 +149,8 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
     function deposit(ledge: Ledge, i: number, r: number) {
         const p = piles.get(ledge.name)!
         const caps = ledge.caps
-        const amount = r * r * 1.7
+        // (more for each, since only some land)
+        const amount = r * r * 2.4
         for (let d = -5; d <= 5; d++) {
             const j = i + d
             if (j < 0 || j >= p.length) continue
@@ -238,7 +243,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             if (flake.x > width + 10) flake.x -= width + 20
 
             // landing on a ledge, where it's in view
-            for (let k = 0; k < ledges.length; k++) {
+            for (let k = 0; flake.lands && k < ledges.length; k++) {
                 const box = boxes[k]
                 if (flake.x < box.left || flake.x >= box.right) continue
                 const ledge = ledges[k]
