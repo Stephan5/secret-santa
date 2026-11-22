@@ -58,7 +58,7 @@ export function Create() {
 
                 <label className="field">
                     <span className="label">Names in the hat</span>
-                    <span className="hint">One a line. You can add more, or take some out, later.</span>
+                    <span className="hint">One person per line. You can add more, or take some out, later.</span>
                     <textarea value={namesText} onChange={e => setNamesText(e.target.value)} rows={7}
                         placeholder={'Arthur\nFord\nTrillian\nZaphod\n…'} autoComplete="off" />
                     {names.length > 0 && <span className="hint" aria-live="polite">{plural(names.length, 'name')}</span>}
@@ -67,13 +67,13 @@ export function Create() {
                 <fieldset className="field">
                     <legend className="label">Organiser password</legend>
                     <span className="hint">
-                        You'll need it to run the draw, change the names, or reset someone that forgot who they got in the draw. Everyone else just needs the link.
-                        There's no way to get it back yet, so keep it safe.
+                        You'll need it to run the draw, change the names, or reset someone who forgot theirs.
+                        Everyone else just needs the link. There's no way to get it back yet, so keep it safe.
                     </span>
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                        minLength={limits.passwordMin} maxLength={limits.passwordMax} autoComplete="new-password" aria-label="Password" />
+                        minLength={limits.passwordMin} maxLength={limits.passwordMax} autoComplete="new-password" aria-label="Password" placeholder="Password" />
                     <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required
-                        autoComplete="new-password" aria-label="Password again" placeholder="Again, to be sure" />
+                        autoComplete="new-password" aria-label="Password again" placeholder="Confirm" />
                 </fieldset>
 
                 <ErrorNote message={error} />

@@ -118,7 +118,7 @@ function Organiser(props: SectionProps) {
                 <h2>Send everyone this link</h2>
                 <CopyLink url={link} />
                 <p className="hint">
-                    Anyone with the link can open a name, so send it to the only the people taking part.
+                    Anyone with the link can open a name, so only send it to the people taking part.
                 </p>
             </section>
 
@@ -384,7 +384,7 @@ function Draws(props: SectionProps) {
 function Participants({people, chosen, onChange, disabled = false}: {people: Person[], chosen: Set<string>, onChange: (chosen: Set<string>) => void, disabled?: boolean}) {
     return (
         <fieldset className="field">
-            <legend className="label">Who's in it</legend>
+            <legend className="label">Who's involved</legend>
             <div className="checks">
                 {people.map(person => (
                     <label key={person.id} className="chip-check">

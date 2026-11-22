@@ -8,8 +8,8 @@ export function Home() {
             <section className="hero">
                 <h1>Secret Santa, without the hat.</h1>
                 <p className="lede">
-                    Put everyone's names in, draw them all at once, and send one link. Each person picks their name and
-                    sees who they're buying for, on their own phone, wherever in the world they are.
+                    Enter everyone's names, draw them in one go, and send out the link.
+                    An easy way to fairly sort out secret santa, with minimal peeking.
                 </p>
                 <Link href={paths.create} className="button button-primary button-large">Start a Secret Santa</Link>
             </section>
@@ -17,22 +17,24 @@ export function Home() {
             <ol className="steps">
                 <li>
                     <h2>Put the names in the hat</h2>
-                    <p>And any rules: couples who shouldn't draw each other, nobody getting who they had last year.</p>
+                    <p>Add rules: couples who shouldn't draw each other, nobody gets who they drew last year.</p>
                 </li>
                 <li>
                     <h2>Draw</h2>
-                    <p>Everyone's drawn at once, so nobody's left holding their own name, and not even you know who got whom.</p>
+                    <p>Everyone is drawn at once, so nobody is left holding their own name, and not even you know who
+                        got whom.</p>
                 </li>
                 <li>
                     <h2>Send the link</h2>
-                    <p>Each name opens on one device only, so if anyone peeks, it shows. Share the results on Christmas Day, if you like.</p>
+                    <p>Each name opens on one device only, so if anyone peeks, it shows. Reveal the results on Christmas
+                        Day, if you like.</p>
                 </li>
             </ol>
         </Page>
     )
 }
 
-export function NotFound({message = "There's nothing here."}: {message?: string}) {
+export function NotFound({message = "There's nothing here."}: { message?: string }) {
     return (
         <Page title="Not found">
             <h1>Nothing here</h1>
