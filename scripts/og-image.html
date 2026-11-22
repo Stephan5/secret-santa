@@ -1,0 +1,170 @@
+<!doctype html>
+<!-- Source for public/og-image.png, the link-preview card. Regenerate with:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+       --hide-scrollbars --window-size=1200,630 --screenshot=public/og-image.png \
+       scripts/og-image.html
+     then shrink it to 256 colours (pngquant 256, say): straight out of
+     Chrome it's about 500 KB, and some apps (WhatsApp, reportedly) leave the
+     image out of the preview over 300 KB.
+     The site's night sky, its present (favicon.svg), its fonts, and snow:
+     falling, and settled along the bottom. The flakes are placed by a seeded
+     random number generator, so it comes out the same each time. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        @font-face {
+            font-family: 'Baloo 2';
+            src: url('../src/web/fonts/Baloo2-ExtraBold.woff2') format('woff2');
+            font-weight: 800;
+        }
+
+        @font-face {
+            font-family: 'Caveat';
+            src: url('../src/web/fonts/Caveat-Bold.woff2') format('woff2');
+            font-weight: 700;
+        }
+
+        @font-face {
+            font-family: 'Space Mono';
+            src: url('../src/web/fonts/SpaceMono-Regular.woff2') format('woff2');
+            font-weight: 400;
+        }
+
+        html, body {
+            margin: 0;
+            width: 1200px;
+            height: 630px;
+            overflow: hidden;
+        }
+
+        body {
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            /* as styles.css: dark at the top, lit faintly holly green and
+               cranberry */
+            background:
+                radial-gradient(ellipse 70% 50% at 85% 10%, rgb(24 92 70 / 0.55), transparent),
+                radial-gradient(ellipse 60% 45% at 5% 85%, rgb(120 20 45 / 0.5), transparent),
+                linear-gradient(#080a1a, #151b36),
+                #0a0c1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #snow, #ground {
+            position: absolute;
+            left: 0;
+            width: 1200px;
+        }
+
+        #snow {
+            top: 0;
+            height: 630px;
+        }
+
+        #ground {
+            bottom: 0;
+            height: 70px;
+        }
+
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -40px;
+        }
+
+        .present {
+            width: 170px;
+            height: 170px;
+            filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.5));
+        }
+
+        h1 {
+            margin: 6px 0 0;
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 800;
+            font-size: 148px;
+            line-height: 1;
+            letter-spacing: 0.01em;
+            color: #fff;
+            text-shadow:
+                0.06em 0.06em 0 #d0263f,
+                0 0 0.45em rgb(10 12 30 / 0.85);
+        }
+
+        p {
+            margin: 4px 0 0;
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            font-size: 64px;
+            line-height: 1;
+            color: #ffd257;
+            transform: rotate(-2deg);
+        }
+
+        .domain {
+            position: absolute;
+            bottom: 86px;
+            font-family: 'Space Mono', monospace;
+            font-size: 26px;
+            color: #a7a4c2;
+        }
+    </style>
+</head>
+<body>
+<canvas id="snow" width="1200" height="630"></canvas>
+<div class="card">
+    <img class="present" src="../public/favicon.svg" alt=""/>
+    <h1>Secret Santa</h1>
+    <p>without the hat</p>
+</div>
+<span class="domain">santa.blakeslee.uk</span>
+<svg id="ground" viewBox="0 0 1200 70" preserveAspectRatio="none" aria-hidden="true">
+    <path id="drift" fill="#eef3ff"/>
+</svg>
+<script>
+    // mulberry32: a small seeded generator, so the snow is the same each time
+    let seed = 25122026
+    function random() {
+        seed |= 0
+        seed = (seed + 0x6d2b79f5) | 0
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+
+    // falling: mostly small, far-off flakes, a few big, near ones (as snow.ts)
+    const context = document.getElementById('snow').getContext('2d')
+    for (let i = 0; i < 260; i++) {
+        const r = 0.8 + random() ** 2.2 * 3.4
+        const x = random() * 1200
+        const y = random() * 580
+        const glow = context.createRadialGradient(x, y, 0, x, y, r)
+        glow.addColorStop(0, `rgb(255 255 255 / ${0.4 + (r / 4.2) * 0.55})`)
+        glow.addColorStop(1, 'rgb(255 255 255 / 0)')
+        context.fillStyle = glow
+        context.beginPath()
+        context.arc(x, y, r, 0, Math.PI * 2)
+        context.fill()
+    }
+
+    // settled: a gently lumpy drift along the bottom
+    const points = []
+    for (let x = 0; x <= 1200; x += 40) points.push([x, 32 + Math.sin(x / 150) * 12 + (random() - 0.5) * 16])
+    // (curving through each point's midpoint with the next, the point itself
+    // the control, so it's smooth all along)
+    let d = `M0 70L${points[0].join(' ')}`
+    for (let i = 1; i < points.length; i++) {
+        const [x0, y0] = points[i - 1]
+        const [x1, y1] = points[i]
+        d += `Q${x0} ${y0} ${(x0 + x1) / 2} ${(y0 + y1) / 2}`
+    }
+    document.getElementById('drift').setAttribute('d', `${d}L${points.at(-1).join(' ')}L1200 70Z`)
+</script>
+</body>
+</html>
