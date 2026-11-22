@@ -8,7 +8,7 @@
 // edge, as snow on a ledge does. The snow lies along the top of what the ledge is
 // on, round its corners as they curve away (so the canvas is sized and
 // placed here, reaching down over them), thinning out to nothing where it
-// would slide off. With reduced motion asked for: a still scatter of
+// would slide off, and rounding off at the ends (`data-taper`, how far in). With reduced motion asked for: a still scatter of
 // flakes, and the snow already settled.
 
 // Levers for fiddling: each a multiplier on how it is now, so 1 leaves it
@@ -68,6 +68,9 @@ type Ledge = {
     base: number[]
     hang: number
     caps: number[]
+    // (how far in from the ends, in CSS pixels, its snow rounds off over
+    // when it's as deep as it gets)
+    taper: number
     // (how much of what lands on each column stays, of the average)
     catches: number[]
     changed: boolean
@@ -141,7 +144,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             if (kept.some(ledge => ledge.canvas === canvas)) continue
             const context = canvas.getContext('2d')
             if (!context) continue
-            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, caps: [], catches: [], changed: true}
+            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, caps: [], taper: 0, catches: [], changed: true}
             size(ledge)
             observer.observe(canvas)
             kept.push(ledge)
@@ -181,7 +184,8 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         }
         // (and none holds where what it's on is steeper than 45 degrees,
         // less the steeper it gets on the way)
-        ledge.caps = capsFor(columns, depth, Number(canvas.dataset.taper ?? 0) * tune.endRounding).map((cap, i) => {
+        ledge.taper = Number(canvas.dataset.taper ?? 0) * tune.endRounding
+        ledge.caps = capsFor(columns, depth).map((cap, i) => {
             const slope = Math.abs(ledge.base[Math.min(columns - 1, i + 1)] - ledge.base[Math.max(0, i - 1)]) / (2 * column)
             return cap * Math.max(0, 1 - slope) ** 2
         })
@@ -274,8 +278,19 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         if (moved > 0.005) ledge.changed = true
     }
 
+    // How deep the snow looks in column i of a ledge: as deep as it is, but
+    // rounding off at the ends, as a pillow of snow does, over a length in
+    // keeping with how deep it is there: a short, low curl to a thin
+    // dusting, the ledge's whole taper once it's as deep as it gets.
+    function shown(ledge: Ledge, p: number[], i: number): number {
+        const fromEnd = Math.min(i, p.length - 1 - i) * column
+        const full = ledge.caps[i] > 0 ? Math.min(1, p[i] / ledge.caps[i]) : 0
+        const u = Math.min(1, fromEnd / Math.max(1, ledge.taper * full))
+        return p[i] * Math.sqrt(1 - (1 - u) ** 2)
+    }
+
     function drawLedge(ledge: Ledge) {
-        const p = piles.get(ledge.name)!
+        const p = piles.get(ledge.name)!.map((_, i, pile) => shown(ledge, pile, i))
         const {base} = ledge
         const c = ledge.context
         const {width: w, height: h} = ledge
@@ -358,7 +373,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
                 const i = Math.min(p.length - 1, Math.floor(((flake.x - box.left) / box.width) * ledge.width / column))
                 const scale = box.height / ledge.height
                 const under = box.top + ledge.base[i] * scale
-                if (flake.y >= under - p[i] * scale && flake.y <= under + 6) {
+                if (flake.y >= under - shown(ledge, p, i) * scale && flake.y <= under + 6) {
                     deposit(ledge, i, flake.r)
                     flakes[n] = newFlake(false)
                     continue flakes
@@ -390,18 +405,15 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
 }
 
 // How deep the snow can get along a ledge: most of its height, rising and
-// falling gently in long, low drifts, and rounding off to nothing over
-// `taper` from the ends, as a pillow of snow does.
-function capsFor(columns: number, height: number, taper: number): number[] {
+// falling gently in long, low drifts. (Its ends round off as it's drawn:
+// shown.)
+function capsFor(columns: number, height: number): number[] {
     const caps: number[] = []
     for (let i = 0; i < columns; i++) {
         const x = i * column
         const along = x / tune.driftLength
         const drifts = Math.max(0, 0.78 + (0.16 * Math.sin(along / 60 + 1.3) + 0.06 * Math.sin(along / 31 + 0.4)) * tune.heaps)
-        const fromEnd = Math.min(i, columns - 1 - i) * column
-        const u = Math.min(1, fromEnd / Math.max(1, taper))
-        const thinning = Math.sqrt(1 - (1 - u) ** 2)
-        caps[i] = Math.min(height, height * 0.9 * drifts * thinning)
+        caps[i] = Math.min(height, height * 0.9 * drifts)
     }
     return caps
 }
