@@ -1,11 +1,9 @@
-/* Christmas Eve, seen from rather further out: after the Hitchhiker's Guide
-   to the Galaxy (as the Guide shows it, on blakeslee.uk's Hitchhiker's
-   theme), with a Christmas twist. Deep space behind everything, starry,
-   lit green and cranberry instead of violet, and snowing; the Guide's
-   black screens for cards, edged in tinsel colours; its large, friendly
-   letters (Baloo 2, OFL) for headings and its screen type (Space Mono,
-   OFL) for the small print. The name drawn stays on paper: a gift tag
-   (Slip.css). Always dark: it's night, and it's space. */
+/* A Christmas night, seen from rather further out. Deep space behind
+   everything, starry, lit holly green and cranberry, and snowing; black
+   screens for cards, edged in tinsel colours; large, friendly letters
+   (Baloo 2, OFL) for headings and a screen's type (Space Mono, OFL) for
+   the small print. The name drawn stays on paper: a gift tag (Slip.css).
+   Always dark: it's night, and it's space. */
 
 @font-face {
     font-family: 'Baloo 2';
@@ -39,7 +37,7 @@
     /* (kept for anything still asking for it) */
     --serif: var(--friendly);
 
-    /* space, and the Guide's screens */
+    /* space, and its screens */
     --space: #0a0c1e;
     --nebula-green: rgb(24 92 70 / 0.55);
     --nebula-red: rgb(120 20 45 / 0.5);
@@ -202,7 +200,7 @@ a {
     gap: 0.5rem 1rem;
 }
 
-/* A screen of the Guide's: black, edged in its own tinsel colour
+/* A screen: black, edged in its own tinsel colour
    (--entry), glowing faintly. They take the colours in turn down a page. */
 .card {
     --entry: var(--tinsel-ice);
@@ -362,7 +360,7 @@ input[type='checkbox'] {
     white-space: nowrap;
 }
 
-/* (the primary ones as the Guide's keys: chunky, and press in) */
+/* (the primary ones chunky, like a handheld's keys, and press in) */
 .button-primary,
 .button-large {
     box-shadow: inset 0 0.12rem 0 rgb(255 255 255 / 0.25), inset 0 -0.22rem 0 rgb(0 0 0 / 0.3);

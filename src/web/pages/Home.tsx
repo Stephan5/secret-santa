@@ -1,25 +1,18 @@
 import {Page} from '../components/Page.tsx'
 import {paths} from '../router.ts'
 import {Link} from '../components/Link.tsx'
-import {DontPanic, GuideDevice} from '../components/Guide.tsx'
 
 export function Home() {
     return (
         <Page>
-            <div className="home-top">
-                <section className="hero">
-                    <h1>Secret Santa, without the hat.</h1>
-                    <p className="lede">
-                        Put everyone's names in, draw them all at once, and send one link. Each person picks their name and
-                        sees who they're buying for, on their own phone, wherever in the world they are.
-                    </p>
-                    <Link href={paths.create} className="button button-primary button-large">Start a Secret Santa</Link>
-                </section>
-                <div className="cover">
-                    <GuideDevice />
-                    <DontPanic />
-                </div>
-            </div>
+            <section className="hero">
+                <h1>Secret Santa, without the hat.</h1>
+                <p className="lede">
+                    Put everyone's names in, draw them all at once, and send one link. Each person picks their name and
+                    sees who they're buying for, on their own phone, wherever in the world they are.
+                </p>
+                <Link href={paths.create} className="button button-primary button-large">Start a Secret Santa</Link>
+            </section>
 
             <ol className="steps">
                 <li>

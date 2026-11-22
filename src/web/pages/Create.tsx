@@ -53,14 +53,14 @@ export function Create() {
                 <label className="field">
                     <span className="label">What's it called?</span>
                     <input value={name} onChange={e => setName(e.target.value)} required maxLength={limits.groupName}
-                        placeholder="The Blakeslee Christmas" autoComplete="off" />
+                        placeholder="Christmas on the Heart of Gold" autoComplete="off" />
                 </label>
 
                 <label className="field">
                     <span className="label">Names in the hat</span>
                     <span className="hint">One a line. You can add more, or take some out, later.</span>
                     <textarea value={namesText} onChange={e => setNamesText(e.target.value)} rows={7}
-                        placeholder={'Tim\nJohn\n…'} autoComplete="off" />
+                        placeholder={'Arthur\nFord\nTrillian\nZaphod\n…'} autoComplete="off" />
                     {names.length > 0 && <span className="hint" aria-live="polite">{plural(names.length, 'name')}</span>}
                 </label>
 

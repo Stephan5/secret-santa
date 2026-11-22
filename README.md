@@ -19,7 +19,7 @@ The site never calls a person "a Secret Santa", which could mean either end of a
 
 ## Tech stack
 
-- **React 19 + TypeScript**, built with **Vite 8**: a single-page app, plain CSS, always dark (a Christmas night, after the Hitchhiker's Guide), in Baloo 2 and Space Mono (OFL, in `src/web/fonts/`)
+- **React 19 + TypeScript**, built with **Vite 8**: a single-page app, plain CSS, always dark (a Christmas night, in space), in Baloo 2 and Space Mono (OFL, in `src/web/fonts/`)
 - **AWS Lambda** (Node 22) for the API, **DynamoDB** to keep things, behind **CloudFront** with the site on **S3**
 - **Terraform** for all of it
 - **Node's test runner** for the unit tests, **Playwright** end to end, **Oxlint**

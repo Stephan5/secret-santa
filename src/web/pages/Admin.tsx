@@ -215,7 +215,7 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
                 if (await act(() => client.addPerson(name))) setName('')
             }}>
                 <input value={name} onChange={e => setName(e.target.value)} maxLength={limits.personName} required
-                    placeholder="Another name" aria-label="Name to add" />
+                    placeholder="Marvin" aria-label="Name to add" />
                 <button type="submit" className="button" disabled={busy}>Add</button>
             </form>
             <ErrorNote message={error} />
