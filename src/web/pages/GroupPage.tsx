@@ -33,6 +33,9 @@ export function GroupPage({groupId}: {groupId: string}) {
     const earlier = before.filter(draw => draw.status === 'drawn')
     const nameOf = (id: string) => group.people.find(p => p.id === id)?.name ?? 'Someone'
     const waiting = !current || current.status === 'pending'
+    // (once its results are out, the exchange is over: until the next draw,
+    // the page looks back on it)
+    const finished = current?.status === 'drawn' && current.results !== null
 
     return (
         <Page title={group.name}>
@@ -58,7 +61,7 @@ export function GroupPage({groupId}: {groupId: string}) {
                 <Link href={paths.admin(group.id)}>Manage this Secret Santa</Link>
             </p>
 
-            {(waiting || opened) && !adminSession.get(group.id) && (
+            {(waiting || opened || finished) && !adminSession.get(group.id) && (
                 <StartYourOwn heading={waiting ? 'While you wait…' : 'Got another lot to sort?'} />
             )}
         </Page>
@@ -74,6 +77,20 @@ function CurrentDraw({group, draw, onRevealed, onShown, nameOf}: {group: Group, 
                 <p>Names haven't been drawn yet. Check back once the group organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
             </section>
+        )
+    }
+    if (draw.results) {
+        return (
+            <>
+                <section className="card card-gold stack finished">
+                    <h2>That's {draw.name} done</h2>
+                    <p>
+                        When it's time for the next one, the group organiser can start a new draw, and it'll show up
+                        here, at this same link. Keep hold of it.
+                    </p>
+                </section>
+                <Results draw={draw} nameOf={nameOf} />
+            </>
         )
     }
     const looked = draw.revealedIds.length

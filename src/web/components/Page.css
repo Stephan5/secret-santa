@@ -205,6 +205,11 @@ main.column {
     text-align: center;
 }
 
+/* (a draw whose results are out, until the next one) */
+.finished {
+    gap: 0.5rem;
+}
+
 /* The panel for finding out who you're buying for: the same size and shape
    whether it's asking who you are, checking, or showing the slip (Slip.tsx).
    Each step is laid in the same place, all but the one it's on hidden, so

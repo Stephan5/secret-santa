@@ -122,6 +122,10 @@ test('everyone sees the full draw results from the results date', async ({page, 
     const pairings = page.locator('.pairings li')
     await expect(pairings).toHaveCount(3)
     await expect(page.getByRole('heading', {name: 'Full draw results'})).toBeVisible()
+    // It's over: no more opening names, until the group organiser starts the next draw
+    await expect(page.getByRole('heading', {name: "That's 2026 done"})).toBeVisible()
+    await expect(page.getByLabel('Who are you?')).toHaveCount(0)
+    await expect(page.getByRole('link', {name: 'Start your own Secret Santa'})).toBeVisible()
     expect(errors).toEqual([])
 })
 
