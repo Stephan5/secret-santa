@@ -32,6 +32,7 @@ export function GroupPage({groupId}: {groupId: string}) {
     // has nothing in it for anyone)
     const earlier = before.filter(draw => draw.status === 'drawn')
     const nameOf = (id: string) => group.people.find(p => p.id === id)?.name ?? 'Someone'
+    const waiting = !current || current.status === 'pending'
 
     return (
         <Page title={group.name}>
@@ -57,7 +58,9 @@ export function GroupPage({groupId}: {groupId: string}) {
                 <Link href={paths.admin(group.id)}>Manage this Secret Santa</Link>
             </p>
 
-            {opened && !adminSession.get(group.id) && <StartYourOwn />}
+            {(waiting || opened) && !adminSession.get(group.id) && (
+                <StartYourOwn heading={waiting ? 'While you wait…' : 'Got another lot to sort?'} />
+            )}
         </Page>
     )
 }
@@ -214,12 +217,13 @@ function longest(people: Person[]): string {
     return people.reduce((most, p) => p.name.length > most.length ? p.name : most, '')
 }
 
-// Once someone has their name, the nudge to run one for their other lot
-// (left out for the organiser, who already knows).
-function StartYourOwn() {
+// While the names are still to be drawn, or once someone has theirs, the
+// nudge to run one for their other lot (left out for the organiser, who
+// already knows).
+function StartYourOwn({heading}: {heading: string}) {
     return (
         <aside className="card card-green start-your-own">
-            <h2>Got another lot to sort?</h2>
+            <h2>{heading}</h2>
             <p>
                 Work, friends, the other side of the family, the group chat that still can't agree on a budget:
                 start a Secret Santa of your own. It takes a couple of minutes, and nobody needs an account.
