@@ -1,19 +1,21 @@
 /* The name drawn, on the back of a sheet of wrapping paper folded in half
-   (Slip.tsx): its patterned side out (wrapping-paper.svg), its plain,
-   gridded back in. The top half (the flap) lies folded down over the
-   bottom, then lifts and swings up, opening it out. */
+   and in half again (Slip.tsx): its printed side out (wrapping-paper.svg),
+   its plain, gridded back in. It's put down folded small, then opened out
+   to the right, then up. */
 .slip {
+    --half: 5.5rem;
+    --print: url('../wrapping-paper.svg') 0 0 / 6rem 6rem, #17463a;
     margin: 1rem auto 1.5rem;
-    width: min(100%, 22rem);
+    width: min(100%, 17rem);
     rotate: -1.5deg;
-    filter: drop-shadow(0 0.9rem 1.4rem rgb(0 0 0 / 0.55));
+    filter: drop-shadow(0 0.8rem 1.2rem rgb(0 0 0 / 0.55));
 }
 
 /* (the sheet's height is the bottom half's, with room above it for the
-   flap to open into) */
+   top half to open into) */
 .slip-sheet {
     position: relative;
-    margin-top: 5.75rem;
+    margin-top: var(--half);
     perspective: 32rem;
 }
 
@@ -25,43 +27,41 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 1.25rem;
-    min-height: 5.75rem;
+    padding: 0 1rem;
+    min-height: var(--half);
     text-align: center;
     color: var(--paper-ink);
-    background:
-        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
-        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
-        #fbf8f1;
 }
 
-/* (the bottom half, its top edge the fold, shaded a little into it) */
+/* (the bottom half, its top edge the fold, shaded a little into it, and
+   the down fold, faintly) */
 .slip-lower {
     justify-content: flex-start;
-    padding-top: 0.5rem;
-    padding-bottom: 1.5rem;
+    padding-top: 0.4rem;
+    padding-bottom: 1rem;
     background:
-        linear-gradient(rgb(0 0 0 / 0.08), transparent 0.6rem),
-        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
-        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        linear-gradient(rgb(0 0 0 / 0.08), transparent 0.5rem),
+        linear-gradient(to right, transparent calc(50% - 1px), rgb(0 0 0 / 0.07) 50%, transparent calc(50% + 1px)),
+        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1rem 1rem,
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1rem 1rem,
         #f6f1e6;
     border-radius: 0 0 0.2rem 0.2rem;
 }
 
-/* The flap: the top half, hinged on the fold at its bottom edge; its inside
-   (the top of what's written) one face, the pattern the other. */
+/* The top half, hinged on the fold at its bottom edge: its inside (the top
+   of what's written) one face, its outside the other. */
 .slip-flap {
     position: absolute;
     left: 0;
     right: 0;
-    top: -5.75rem;
-    height: 5.75rem;
+    top: calc(-1 * var(--half));
+    height: var(--half);
     transform-origin: 50% 100%;
     transform-style: preserve-3d;
 }
 
 .slip-upper,
-.slip-flap-outside {
+.slip-outside {
     position: absolute;
     inset: 0;
     backface-visibility: hidden;
@@ -69,26 +69,64 @@
 
 .slip-upper {
     justify-content: flex-end;
-    padding-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
     background:
-        linear-gradient(to top, rgb(0 0 0 / 0.06), transparent 0.6rem),
-        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
-        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        linear-gradient(to top, rgb(0 0 0 / 0.06), transparent 0.5rem),
+        linear-gradient(to right, transparent calc(50% - 1px), rgb(0 0 0 / 0.07) 50%, transparent calc(50% + 1px)),
+        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1rem 1rem,
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1rem 1rem,
         #fbf8f1;
     border-radius: 0.2rem 0.2rem 0 0;
 }
 
-.slip-flap-outside {
+/* The top half's outside, seen while it's folded down: printed, in two
+   halves, the right one hinged on the down fold. (Its own perspective,
+   since it's flat to the flap.) */
+.slip-outside {
     transform: rotateX(180deg);
-    background: url('../wrapping-paper.svg') 0 0 / 7.5rem 7.5rem, #17463a;
-    border-radius: 0 0 0.2rem 0.2rem;
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+    perspective: 32rem;
 }
 
-.slip-for {
+.slip-print {
+    position: absolute;
+    inset: 0;
+    background: var(--print);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.slip-left {
+    right: 50%;
+    border-radius: 0 0 0 0.2rem;
+}
+
+.slip-right {
+    position: absolute;
+    inset: 0 0 0 50%;
+    transform-origin: 0 50%;
+    transform-style: preserve-3d;
+}
+
+.slip-right-front,
+.slip-right-back {
+    backface-visibility: hidden;
+}
+
+/* (the print carrying on across the fold from the left half) */
+.slip-right-front {
+    background-position: calc(-1 * min(100vw - 2rem, 17rem) / 2) 0, 0 0;
+    border-radius: 0 0 0.2rem 0;
+}
+
+.slip-right-back {
+    transform: rotateY(180deg);
+    background-position: 1.7rem 2.3rem, 0 0;
+    border-radius: 0 0 0.2rem 0;
+}
+
+p.slip-for {
     margin: 0;
     font-family: var(--mono);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.02em;
     color: var(--paper-muted);
 }
@@ -97,33 +135,60 @@
     margin: 0;
     font-family: var(--friendly);
     font-weight: 800;
-    font-size: clamp(2.4rem, 11vw, 3.4rem);
+    font-size: clamp(2.2rem, 10vw, 2.9rem);
     line-height: 1.05;
     color: var(--paper-red);
     overflow-wrap: anywhere;
 }
 
+/* Unfolding: put down (0–0.45s), opened out to the right (0.6–1.3s), then
+   up (1.45–2.3s). Until it's opened right, the bottom half's right side
+   is folded under (so hidden). */
 @media (prefers-reduced-motion: no-preference) {
     .slip-unfold {
-        animation: slip-arrive 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+        animation: slip-arrive 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .slip-unfold .slip-right {
+        animation: slip-open-right 700ms cubic-bezier(0.45, 0, 0.2, 1) 600ms both;
+    }
+
+    .slip-unfold .slip-lower {
+        animation: slip-folded-under 1300ms step-end both;
     }
 
     .slip-unfold .slip-flap {
-        animation: slip-open 1100ms cubic-bezier(0.45, 0, 0.2, 1) 650ms both;
+        animation: slip-open-up 850ms cubic-bezier(0.45, 0, 0.2, 1) 1450ms both;
     }
 }
 
-/* put down, folded */
 @keyframes slip-arrive {
     from {
         translate: 0 1.5rem;
-        scale: 0.92;
+        scale: 0.9;
         opacity: 0;
     }
 }
 
-/* the flap lifted off the bottom half, towards you, and laid open above it */
-@keyframes slip-open {
+@keyframes slip-open-right {
+    from {
+        transform: rotateY(-180deg);
+    }
+    to {
+        transform: rotateY(0);
+    }
+}
+
+@keyframes slip-folded-under {
+    from {
+        clip-path: inset(0 50% 0 0);
+    }
+    to {
+        clip-path: none;
+    }
+}
+
+@keyframes slip-open-up {
     from {
         transform: rotateX(-180deg);
     }
