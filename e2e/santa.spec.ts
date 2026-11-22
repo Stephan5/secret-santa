@@ -7,8 +7,8 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
     // Start one
     await page.goto('/')
     await page.getByRole('link', {name: 'Start a Secret Santa'}).click()
-    await page.getByLabel("What's it called?").fill('The Blakeslee Christmas')
-    await page.getByLabel('Names in the hat').fill('Mum\nDad\nSue\n')
+    await page.getByLabel("What's it called?").fill('My Group')
+    await page.getByLabel('Names in the hat').fill('Mum\nDad\nBill\n')
     await page.getByLabel('Password', {exact: true}).fill('mince pies')
     await page.getByLabel('Password again').fill('mince pies')
     await page.getByRole('button', {name: 'Create'}).click()

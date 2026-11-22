@@ -118,8 +118,7 @@ function Organiser(props: SectionProps) {
                 <h2>Send everyone this link</h2>
                 <CopyLink url={link} />
                 <p className="hint">
-                    Anyone with it can open a name, so send it to the people taking part, not the whole internet.
-                    Keep this page's address to yourself: it's the same, with /admin on the end.
+                    Anyone with the link can open a name, so send it to the only the people taking part.
                 </p>
             </section>
 
@@ -303,7 +302,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
                 <input type="checkbox" checked={rules.noSwaps} disabled={busy} onChange={e => save({noSwaps: e.target.checked})} />
                 <span>
                     <span className="label">No swaps</span>
-                    <span className="hint">If Mum buys for Dad, Dad doesn't buy for Mum.</span>
+                    <span className="hint">If Tim buys for John, John doesn't buy for Tim.</span>
                 </span>
             </label>
 
