@@ -182,7 +182,7 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
 
     return (
         <section className="card card-green stack">
-            <h2>People</h2>
+            <h2>Names in the hat</h2>
             {active.length === 0 && <p className="muted">Nobody yet.</p>}
             <ul className="people">
                 {active.map(person => (

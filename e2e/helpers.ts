@@ -45,7 +45,7 @@ export async function signIn(page: Page, groupId: string) {
     await page.goto(`/g/${groupId}/admin`)
     await page.getByLabel('Organiser password').fill(password)
     await page.getByRole('button', {name: 'Sign in'}).click()
-    await expect(page.getByRole('heading', {name: 'People'})).toBeVisible()
+    await expect(page.getByRole('heading', {name: 'Names in the hat'})).toBeVisible()
 }
 
 // Opens a name in a browser of its own: another person's phone.
