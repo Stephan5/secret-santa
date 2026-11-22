@@ -280,7 +280,7 @@ describe('API', () => {
             assert.equal(response.status, 422)
             assert.equal(response.body.error, 'draw-impossible')
             assert.deepEqual(response.body.blockers, ['exclusions'])
-            assert.match(response.body.message, /without the people who never draw each other/)
+            assert.match(response.body.message, /without the "Never draw each other" pairs/)
         })
 
         it("doesn't give anyone who they had last time", async () => {
@@ -320,7 +320,7 @@ describe('API', () => {
             for (const [method, path] of [['POST', `/draws/${drawId}/run`], ['POST', `/draws/${drawId}/undo`], ['DELETE', `/draws/${drawId}`]]) {
                 const response = await admin<ApiError>(method, path)
                 assert.equal(response.status, 409, path)
-                assert.match(response.body.message, /already looked/)
+                assert.match(response.body.message, /already opened theirs/)
             }
             // …and who takes part is set once drawn
             assert.equal((await admin('PATCH', `/draws/${drawId}`, {participantIds: [as('Mum'), as('Dad')]})).status, 409)
@@ -358,7 +358,7 @@ describe('API', () => {
             const elsewhere = await reveal(as('Mum'), device(2))
             assert.equal(elsewhere.status, 409)
             assert.equal(elsewhere.body.error, 'already-revealed')
-            assert.match(elsewhere.body.message, /Mum's name has already been revealed on another device/)
+            assert.match(elsewhere.body.message, /Someone's already opened Mum's on another device/)
 
             // Everyone can see that Mum has looked, but not who she got
             const {body} = await call<Group>('GET', `/api/groups/${id}`)

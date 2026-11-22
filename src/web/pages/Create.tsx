@@ -67,18 +67,18 @@ export function Create() {
                 <fieldset className="field">
                     <legend className="label">Organiser password</legend>
                     <span className="hint">
-                        You'll need it to run the draw, change the names, or reset someone who forgot theirs.
-                        Everyone else just needs the link. There's no way to get it back yet, so keep it safe.
+                        You'll need it to run the draw, change the names, or reset one that was opened on the wrong
+                        phone. Everyone else just needs the link. There's no way to get it back, so keep it safe.
                     </span>
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
                         minLength={limits.passwordMin} maxLength={limits.passwordMax} autoComplete="new-password" aria-label="Password" placeholder="Password" />
                     <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required
-                        autoComplete="new-password" aria-label="Password again" placeholder="Confirm" />
+                        autoComplete="new-password" aria-label="Password again" placeholder="Same again" />
                 </fieldset>
 
                 <ErrorNote message={error} />
                 <button type="submit" className="button button-primary button-large" disabled={busy}>
-                    {busy ? 'Creating…' : 'Create'}
+                    {busy ? 'Starting…' : 'Start it'}
                 </button>
             </form>
         </Page>

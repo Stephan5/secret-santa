@@ -68,7 +68,7 @@ function SignIn({group, onSignedIn}: {group: Group, onSignedIn: (token: string) 
                 <ErrorNote message={error} />
                 <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
             </form>
-            <p className="organiser-link"><Link href={paths.group(group.id)}>Not organising? Open your name</Link></p>
+            <p className="organiser-link"><Link href={paths.group(group.id)}>Not organising? Find out who you're buying for</Link></p>
         </Page>
     )
 }
@@ -287,7 +287,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
 
             <label className="field">
                 <span className="label">Don't repeat earlier draws</span>
-                <span className="hint">Nobody gets someone they had in this many of the draws before.</span>
+                <span className="hint">Nobody gets someone they've bought for recently.</span>
                 <select value={rules.avoidRecentDraws} disabled={busy}
                     onChange={e => save({avoidRecentDraws: Number(e.target.value)})}>
                     <option value={0}>Repeats are fine</option>
@@ -384,7 +384,7 @@ function Draws(props: SectionProps) {
 function Participants({people, chosen, onChange, disabled = false}: {people: Person[], chosen: Set<string>, onChange: (chosen: Set<string>) => void, disabled?: boolean}) {
     return (
         <fieldset className="field">
-            <legend className="label">Who's involved</legend>
+            <legend className="label">Who's in this draw</legend>
             <div className="checks">
                 {people.map(person => (
                     <label key={person.id} className="chip-check">
@@ -470,7 +470,7 @@ function DrawCard({group, setGroup, client, signedOut, draw}: SectionProps & {dr
                                         {looked && (
                                             <button type="button" className="link-button" disabled={busy}
                                                 aria-label={`Reset ${nameOf(id)}`}
-                                                onClick={() => confirm(`Reset ${nameOf(id)}? Whoever opened it won't see it any more, and it can be opened again on any device.`)
+                                                onClick={() => confirm(`Reset ${nameOf(id)}'s? Whoever opened it loses it, and it can be opened again on any device.`)
                                                     && act(() => client.resetReveal(draw.id, id))}>Reset</button>
                                         )}
                                     </span>
@@ -479,16 +479,19 @@ function DrawCard({group, setGroup, client, signedOut, draw}: SectionProps & {dr
                         })}
                     </ul>
                     {nobodyLooked ? (
-                        <div className="row">
-                            <button type="button" className="button" disabled={busy}
-                                onClick={() => confirm('Draw the names again?') && act(() => client.runDraw(draw.id))}>Draw again</button>
-                            <button type="button" className="button" disabled={busy}
-                                onClick={() => act(() => client.undoDraw(draw.id))}>Undo draw</button>
-                            <button type="button" className="button button-quiet" disabled={busy}
-                                onClick={() => confirm(`Delete the ${draw.name} draw?`) && act(() => client.deleteDraw(draw.id))}>Delete</button>
-                        </div>
+                        <>
+                            <div className="row">
+                                <button type="button" className="button" disabled={busy}
+                                    onClick={() => confirm('Draw the names again?') && act(() => client.runDraw(draw.id))}>Draw again</button>
+                                <button type="button" className="button" disabled={busy}
+                                    onClick={() => act(() => client.undoDraw(draw.id))}>Undo draw</button>
+                                <button type="button" className="button button-quiet" disabled={busy}
+                                    onClick={() => confirm(`Delete the ${draw.name} draw?`) && act(() => client.deleteDraw(draw.id))}>Delete</button>
+                            </div>
+                            <p className="hint">Undo the draw to change who's in it.</p>
+                        </>
                     ) : (
-                        <p className="hint">Now someone has looked, it can't be drawn again or deleted. Reset anyone who opened the wrong name.</p>
+                        <p className="hint">Someone has opened theirs, so this draw can't be drawn again or deleted. If someone opened the wrong one, reset it.</p>
                     )}
                 </>
             )}

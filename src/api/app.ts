@@ -291,7 +291,7 @@ export function createApp(options: AppOptions): App {
         ['DELETE', '/api/groups/:groupId/draws/:drawId', async context => {
             const aggregate = await admin(context)
             const found = findDraw(aggregate, context.params.drawId)
-            if (anyoneLooked(aggregate, found.id)) throw conflict("Someone has already looked, so this draw can't be deleted.")
+            if (anyoneLooked(aggregate, found.id)) throw conflict("Someone has already opened theirs, so this draw can't be deleted.")
             const giverIds = found.status === 'drawn' ? found.participantIds : []
             await store.deleteDraw(aggregate.group.id, found.id, giverIds)
             return view(aggregate.group.id, context.now)
@@ -301,7 +301,7 @@ export function createApp(options: AppOptions): App {
         ['POST', '/api/groups/:groupId/draws/:drawId/run', async context => {
             const aggregate = await admin(context)
             const found = findDraw(aggregate, context.params.drawId)
-            if (anyoneLooked(aggregate, found.id)) throw conflict("Someone has already looked, so names can't be drawn again.")
+            if (anyoneLooked(aggregate, found.id)) throw conflict("Someone has already opened theirs, so names can't be drawn again.")
             const {rules: groupRules} = aggregate.group
             // The pairings of the last few draws before this one
             const previous = aggregate.draws
@@ -328,7 +328,7 @@ export function createApp(options: AppOptions): App {
             const aggregate = await admin(context)
             const found = findDraw(aggregate, context.params.drawId)
             if (found.status !== 'drawn') throw conflict("Names haven't been drawn yet.")
-            if (anyoneLooked(aggregate, found.id)) throw conflict("Someone has already looked, so the draw can't be undone.")
+            if (anyoneLooked(aggregate, found.id)) throw conflict("Someone has already opened theirs, so the draw can't be undone.")
             await store.undoDraw(aggregate.group.id, found.id, found.participantIds)
             return view(aggregate.group.id, context.now)
         }],
@@ -345,7 +345,7 @@ export function createApp(options: AppOptions): App {
             const result = await store.reveal(aggregate.group.id, found.id, person.id, sha256(deviceToken), at.toISOString())
             if (result.outcome === 'elsewhere') {
                 throw new HttpError(409, 'already-revealed',
-                    `${person.name}'s name has already been revealed on another device. If that wasn't ${person.name}, ask the organiser to reset it.`)
+                    `Someone's already opened ${person.name}'s on another device. If that wasn't ${person.name}, ask the organiser to reset it.`)
             }
             if (result.outcome === 'missing') throw notFound("That person isn't in this draw.")
             const receiver = findPerson(aggregate, result.pairing.receiverId)
