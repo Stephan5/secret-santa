@@ -130,7 +130,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
                 <Slip forName={shown.person.name} receiverName={shown.receiverName} unfold={shown.fresh} />
                 {remembered
                     ? <p className="muted center">This device will remember, so you can come back any time to check.</p>
-                    : <p className="warning center">This browser can't remember it (private browsing?), and it can't be opened again anywhere else, so write it down.</p>}
+                    : <p className="warning center">This browser can't remember it (private browsing?), and it can't be opened again anywhere else, so screenshot it or write it down.</p>}
                 <p className="center">
                     <button type="button" className="link-button" onClick={() => { setShown(null); setChosen('') }}>
                         Not {shown.person.name}? Choose another name
@@ -160,9 +160,9 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
                         </select>
                     </label>
                     <ErrorNote message={error} />
-                    <button type="submit" className="button button-primary button-large" disabled={!person}>Open my name</button>
+                    <button type="submit" className="button button-primary button-large" disabled={!person}>Show me who I'm buying for</button>
                     <p className="hint">
-                        Each name opens on one device only. If yours says it's already been opened and you haven't,
+                        Each name opens on one device only. If yours says it's already been opened and it wasn't you,
                         ask the organiser to reset it.
                     </p>
                 </form>

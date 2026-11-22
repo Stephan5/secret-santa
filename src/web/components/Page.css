@@ -51,7 +51,9 @@ main.column {
     flex-direction: column;
     gap: 1.5rem;
     padding-top: 2.5rem;
-    padding-bottom: 3rem;
+    /* (the footer's snowdrift, 1.75rem at its deepest, settles into this,
+       so it's that much more than the gap wanted above the snow) */
+    padding-bottom: 4.5rem;
 }
 
 .column-wide {
@@ -167,6 +169,7 @@ main.column {
 
 .snowy {
     position: relative;
+    margin-top: 1rem;
 }
 
 .steps h2 {

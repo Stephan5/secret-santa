@@ -41,10 +41,10 @@ export function groupView({group, people, draws, pairings}: GroupAggregate, now:
 export const resultsVisible = (from: string | null, now: Date) => from !== null && new Date(from) <= now
 
 const ruleLabels: Record<RuleName, string> = {
-    exclusions: 'the people who never draw each other',
-    avoidRecentDraws: 'not repeating recent draws',
-    noSwaps: 'no swaps',
-    singleLoop: 'one big loop',
+    exclusions: 'the "Never draw each other" pairs',
+    avoidRecentDraws: 'the "Don\'t repeat earlier draws" rule',
+    noSwaps: 'the "No swaps" rule',
+    singleLoop: 'the "One big loop" rule',
 }
 
 export function impossibleMessage(blockers: RuleName[]): string {

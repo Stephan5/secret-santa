@@ -11,7 +11,7 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
     await page.getByLabel('Names in the hat').fill('Mum\nDad\nBill\n')
     await page.getByLabel('Password', {exact: true}).fill('mince pies')
     await page.getByLabel('Password again').fill('mince pies')
-    await page.getByRole('button', {name: 'Create'}).click()
+    await page.getByRole('button', {name: 'Start it'}).click()
     await expect(page).toHaveURL(/\/g\/[0-9a-f-]{36}\/admin$/)
     const groupUrl = page.url().replace(/\/admin$/, '')
     const groupId = groupUrl.split('/').at(-1)!
@@ -75,7 +75,7 @@ test("a name opened on one phone can't be opened on another, until the organiser
 
     await page.reload()
     await page.getByLabel('Who are you?').selectOption({label: 'Mum'})
-    await page.getByRole('button', {name: 'Open my name'}).click()
+    await page.getByRole('button', {name: "Show me who I'm buying for"}).click()
     await page.getByRole('button', {name: 'Yes, show me'}).click()
     await expect(page.locator('.slip-name')).toHaveText(mum.receiver)
 
@@ -91,7 +91,7 @@ test("a shared device can open more than one name", async ({page, request}) => {
     await page.goto(`/g/${group.id}`)
     for (const name of ['Mum', 'Dad']) {
         await page.getByLabel('Who are you?').selectOption({label: name})
-        await page.getByRole('button', {name: 'Open my name'}).click()
+        await page.getByRole('button', {name: "Show me who I'm buying for"}).click()
         await page.getByRole('button', {name: 'Yes, show me'}).click()
         await expect(page.locator('.slip-for')).toHaveText(`${name}, you're buying for`)
         await page.getByRole('button', {name: `Not ${name}? Choose another name`}).click()
@@ -122,7 +122,7 @@ test('says which rules are in the way when no draw fits them', async ({page, req
     await admin('POST', '/draws', {name: '2026', participantIds: group.people.map(p => p.id), resultsVisibleFrom: null})
     await signIn(page, group.id)
     await page.getByRole('button', {name: 'Draw names'}).click()
-    await expect(page.getByRole('alert')).toHaveText('No draw fits these rules. It would work without the people who never draw each other.')
+    await expect(page.getByRole('alert')).toHaveText('No draw fits these rules. It would work without the "Never draw each other" pairs.')
 })
 
 test("turns away a wrong organiser password", async ({page, request}) => {
@@ -152,7 +152,7 @@ test("doesn't scroll sideways on a phone, even as the slip unfolds", async ({bro
     }
     await page.goto(`/g/${group.id}`)
     await page.getByLabel('Who are you?').selectOption({label: 'Sue'})
-    await page.getByRole('button', {name: 'Open my name'}).click()
+    await page.getByRole('button', {name: "Show me who I'm buying for"}).click()
     await page.getByRole('button', {name: 'Yes, show me'}).click()
     for (let i = 0; i < 5; i++) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360)

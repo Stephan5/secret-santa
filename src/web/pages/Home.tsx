@@ -6,10 +6,10 @@ export function Home() {
     return (
         <Page>
             <section className="hero">
-                <h1>Secret Santa, sorted</h1>
+                <h1>Secret Santa,<br/>sorted</h1>
                 <p className="lede">
-                    Enter everyone's names, draw them all in one go, and then send out the link.
-                    An easy way to fairly sort out secret santa, with minimal peeking.
+                    Put everyone's names in, draw them all at once, and send one link. Everyone finds out
+                    who they're buying for on their own phone, wherever they are.
                 </p>
                 <Link href={paths.create} className="button button-primary button-large snowy">
                     Start a Secret Santa
@@ -21,19 +21,18 @@ export function Home() {
                 <li>
                     <StepKey n={1} />
                     <h2>Put the names in the hat</h2>
-                    <p>Add rules: couples who shouldn't draw each other, nobody gets the same person as last year.</p>
+                    <p className="details">Plus any rules: couples who shouldn't draw each other, nobody getting the same person as last year.</p>
                 </li>
                 <li>
                     <StepKey n={2} />
                     <h2>Draw</h2>
-                    <p>Everyone is drawn at once, so nobody is left holding their own name, and not even you know who
+                    <p className="details">Everyone is drawn at once, so nobody is left holding their own name, and not even you know who
                         got whom.</p>
                 </li>
                 <li>
                     <StepKey n={3} />
                     <h2>Send the link</h2>
-                    <p>Each name opens on one device only, so if anyone peeks, it shows. Reveal the results on Christmas
-                        Day, if you like.</p>
+                    <p className="details">Each name opens on one device only, so if anyone peeks, it shows. Set the full results be revealed once Santa has been, if you like.</p>
                 </li>
             </ol>
         </Page>
