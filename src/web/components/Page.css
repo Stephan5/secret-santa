@@ -213,20 +213,38 @@ main.column {
 .pairings li {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
+    align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.55rem 0.9rem;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
 }
 
-.pairings li span:first-child {
+.pair-name {
+    font-family: var(--friendly);
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: 0.01em;
+    overflow-wrap: anywhere;
+}
+
+.pair-name:first-child {
     text-align: right;
 }
 
-.pairings li span:nth-child(2) {
+.pair-arrow {
+    display: inline-flex;
     color: var(--tinsel-red);
-    font-family: var(--mono);
+}
+
+.pair-arrow svg {
+    width: 2.1rem;
+    height: auto;
+    fill: none;
+    stroke-width: 4.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 details summary {

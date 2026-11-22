@@ -190,7 +190,11 @@ function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
                 <h2>Who had whom</h2>
                 <ul className="pairings">
                     {draw.results.map(({giverId, receiverId}) => (
-                        <li key={giverId}><span>{nameOf(giverId)}</span><span aria-label="bought for"> → </span><span>{nameOf(receiverId)}</span></li>
+                        <li key={giverId}>
+                            <span className="pair-name">{nameOf(giverId)}</span>
+                            <PairArrow />
+                            <span className="pair-name">{nameOf(receiverId)}</span>
+                        </li>
                     ))}
                 </ul>
             </section>
@@ -200,4 +204,18 @@ function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
         return <p className="muted results-later">Everyone's pairings will be shown here from {formatWhen(draw.resultsVisibleFrom)}.</p>
     }
     return null
+}
+
+// The arrow between who bought and who they bought for: chunky and rounded,
+// like the headings' lettering, cast in a darker red as they are.
+function PairArrow() {
+    return (
+        <span className="pair-arrow">
+            <span className="visually-hidden">bought for</span>
+            <svg viewBox="0 0 34 22" aria-hidden="true">
+                <path d="M4 12.5h22M19.5 5.5l8 7-8 7" transform="translate(1.6 1.6)" stroke="#8e1426" />
+                <path d="M4 12.5h22M19.5 5.5l8 7-8 7" stroke="currentColor" />
+            </svg>
+        </span>
+    )
 }

@@ -5,8 +5,11 @@
 .slip {
     --half: 6rem;
     --print: url('../wrapping-paper.svg') 0 0 / 6rem 6rem, #17463a;
-    padding: 1.5rem 1.25rem 2.25rem;
-    margin-bottom: 1.25rem;
+    /* (narrower than the column: the sheet, with room round it) */
+    width: 100%;
+    max-width: 23rem;
+    margin: 0.5rem auto 1.5rem;
+    padding: 2.25rem 1.25rem 3rem;
     /* (a column, so the space under who it's for and the room above the
        sheet don't collapse into one) */
     display: flex;
@@ -132,7 +135,7 @@ main .slip.card[role="status"] {
 
 /* Who it's for, above the sheet */
 p.slip-for {
-    margin: 0 0 1.5rem;
+    margin: 0 0 2rem;
     font-family: var(--mono);
     font-size: 0.9rem;
     letter-spacing: 0.02em;
@@ -153,12 +156,31 @@ p.slip-for {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--friendly);
-    font-weight: 800;
-    line-height: 1.05;
-    color: var(--paper-red);
+    /* in pen: Caveat (OFL), in blue-black ink */
+    font-family: var(--hand);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--paper-pen);
     text-wrap: balance;
     overflow-wrap: anywhere;
+}
+
+.slip-text {
+    text-align: center;
+    text-wrap: balance;
+}
+
+.slip-last-word {
+    white-space: nowrap;
+}
+
+.doodle {
+    display: inline-block;
+    width: 0.95em;
+    height: 0.95em;
+    margin-left: 0.15em;
+    vertical-align: -0.05em;
+    rotate: 8deg;
 }
 
 .slip-upper .slip-written {

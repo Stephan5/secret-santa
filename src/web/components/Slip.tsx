@@ -1,10 +1,11 @@
+import {Doodle} from './Doodle.tsx'
 import './Slip.css'
 
 // The name drawn, written on the back of a sheet of wrapping paper folded
 // in half and in half again, which unfolds (unless reduced motion is asked
 // for, or it's being shown again rather than for the first time): first
-// out to the right, then up, in a panel. Who it's for is above it; the name's written
-// large across the middle of the sheet, over the across fold, so each half
+// out to the right, then up, in a panel. Who it's for is above it; the name's handwritten
+// large, with a doodle beside it, across the middle of the sheet, over the across fold, so each half
 // of the sheet has its half of it (the top one hidden from screen readers,
 // so it's read once).
 //
@@ -19,11 +20,11 @@ export function Slip({forName, receiverName, unfold}: {forName: string, receiver
             <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheet">
                 <div className="slip-half slip-lower">
-                    <p className="slip-written slip-name" style={size}>{receiverName}</p>
+                    <p className="slip-written slip-name" style={size}><Written name={receiverName} /></p>
                 </div>
                 <div className="slip-flap">
                     <div className="slip-half slip-upper">
-                        <p className="slip-written" style={size} aria-hidden="true">{receiverName}</p>
+                        <p className="slip-written" style={size} aria-hidden="true"><Written name={receiverName} /></p>
                     </div>
                     <div className="slip-outside" aria-hidden="true">
                         <div className="slip-print slip-left" />
@@ -38,11 +39,26 @@ export function Slip({forName, receiverName, unfold}: {forName: string, receiver
     )
 }
 
+// The name, with its doodle kept on the line of its last word.
+function Written({name}: {name: string}) {
+    const words = name.trim().split(/\s+/)
+    const last = words.pop()
+    // (one span, so it's laid out as one run of text in the middle of the sheet)
+    return (
+        <span className="slip-text">
+            {words.length > 0 && `${words.join(' ')} `}
+            <span className="slip-last-word">{last}<Doodle name={name} /></span>
+        </span>
+    )
+}
+
 // How big to write the name, in rem: as big as fits across the sheet, going
-// by its longest word (so a word isn't broken), and smaller still if it's
-// long enough to need three lines.
+// by its widest word (so a word isn't broken; the last with its doodle), and
+// smaller still if it's long enough to need three lines.
 function nameSize(name: string): number {
-    const longestWord = Math.max(...name.split(/\s+/).map(word => word.length), 1)
-    const size = Math.min(3.6, 25 / longestWord)
-    return name.length > 24 ? Math.min(size, 2) : size
+    const words = name.trim().split(/\s+/)
+    // (in ems: a letter of the handwriting's about 0.45 wide, the doodle 1.1)
+    const widest = Math.max(...words.map((word, i) => word.length * 0.45 + (i === words.length - 1 ? 1.1 : 0)))
+    const size = Math.min(4.2, 14.5 / widest)
+    return name.length > 24 ? Math.min(size, 2.6) : size
 }
