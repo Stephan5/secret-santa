@@ -186,9 +186,10 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         }
         c.lineTo(w, base[p.length - 1] - p[p.length - 1])
         // ...and back along its underside: what it's lying on, less where it
-        // hangs over the front, more the deeper it is above, in uneven lumps
-        const lumps = ledge.lumps
-        const under = (i: number) => base[i] + Math.min(ledge.hang, p[i] * 0.7) * lumps[i]
+        // hangs a little over the front, in a shape of its own (not the top's
+        // turned over), fading out only where the snow above runs out
+        const {lumps, hang} = ledge
+        const under = (i: number) => base[i] + hang * lumps[i] * Math.min(1, p[i] / 2.5)
         c.lineTo(w, under(p.length - 1))
         for (let i = p.length - 2; i >= 0; i--) {
             const midX = (x(i + 1) + x(i)) / 2
@@ -296,9 +297,10 @@ function capsFor(columns: number, height: number, taper: number): number[] {
     return caps
 }
 
-// Uneven lumps along a ledge, between 0.3 and 1: a value every few columns,
-// picked from the ledge's name, eased between, so the snow's underside
-// rounds over from one to the next.
+// How far the snow hangs along a ledge, of the most it could: mostly a thin,
+// even lip, with now and then a rounder drip. A value every few columns,
+// picked from the ledge's name, eased between, so it rounds over from one
+// to the next.
 function lumpsFor(columns: number, name: string): number[] {
     let seed = 0
     for (const char of name) seed = (seed * 31 + char.codePointAt(0)!) >>> 0
@@ -306,9 +308,10 @@ function lumpsFor(columns: number, name: string): number[] {
         let h = (seed ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0
         h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0
         h = (h ^ (h >>> 13)) >>> 0
-        return 0.3 + 0.7 * (h / 0xffffffff)
+        const pick = h / 0xffffffff
+        return pick < 0.2 ? 0.75 + pick * 1.25 : 0.25 + (pick - 0.2) * 0.25
     }
-    const every = 3
+    const every = 4
     const lumps: number[] = []
     for (let i = 0; i < columns; i++) {
         const k = Math.floor(i / every)
