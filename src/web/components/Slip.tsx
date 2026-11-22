@@ -4,7 +4,8 @@ import './Slip.css'
 // The name drawn, written on the back of a sheet of wrapping paper folded
 // in half and in half again, which unfolds (unless reduced motion is asked
 // for, or it's being shown again rather than for the first time): first
-// out to the right, then up, in a panel. Who it's for is above it; the name's handwritten
+// out to the right, then up, in a panel (red, as the name picker it
+// takes the place of). Who it's for is above it; the name's handwritten
 // large, with a doodle beside it, across the middle of the sheet, over the across fold, so each half
 // of the sheet has its half of it (the top one hidden from screen readers,
 // so it's read once).
@@ -16,7 +17,7 @@ import './Slip.css'
 export function Slip({forName, receiverName, unfold}: {forName: string, receiverName: string, unfold: boolean}) {
     const size = {fontSize: `${nameSize(receiverName)}rem`}
     return (
-        <div className={unfold ? 'card slip slip-unfold' : 'card slip'} role="status" aria-live="polite">
+        <div className={unfold ? 'card card-red slip slip-unfold' : 'card card-red slip'} role="status" aria-live="polite">
             <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheet">
                 <div className="slip-half slip-lower">

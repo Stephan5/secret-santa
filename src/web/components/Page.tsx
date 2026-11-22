@@ -9,21 +9,22 @@ const year = new Date().getFullYear()
 
 // Every page: the candy-stripe ribbon across the top, the content in a
 // column, and a small footer (its name, and the copyright), with snow falling behind it all and
-// gathering on the footer's divider (snow.ts).
+// settling on the footer's divider, and anything else in the page with a
+// `canvas.snowdrift` on top (snow.ts).
 export function Page({title, children, wide = false}: {title?: string, children: ReactNode, wide?: boolean}) {
     useEffect(() => {
         document.title = title ? `${title} · Secret Santa` : 'Secret Santa'
     }, [title])
     const fall = useRef<HTMLCanvasElement>(null)
-    const drift = useRef<HTMLCanvasElement>(null)
-    useEffect(() => startSnow(fall.current!, drift.current!), [])
+    const page = useRef<HTMLDivElement>(null)
+    useEffect(() => startSnow(fall.current!, page.current!), [])
     return (
-        <div className="page">
+        <div className="page" ref={page}>
             <canvas ref={fall} className="snowfall" aria-hidden="true" />
             <div className="ribbon" aria-hidden="true" />
             <main className={wide ? 'column column-wide' : 'column'}>{children}</main>
             <footer className={wide ? 'footer column column-wide' : 'footer column'}>
-                <canvas ref={drift} className="snowdrift" aria-hidden="true" />
+                <canvas className="snowdrift" data-ledge="footer" data-taper="36" aria-hidden="true" />
                 <Link href={paths.home} className="wordmark">
                     <img src="/favicon.svg" alt="" width="20" height="20" />
                     Secret Santa

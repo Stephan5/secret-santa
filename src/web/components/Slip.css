@@ -16,12 +16,6 @@
     flex-direction: column;
 }
 
-/* (in a panel edged red, as the name picker it takes the place of; the
-   attribute only to outrank the panels' turn-by-turn colours) */
-main .slip.card[role="status"] {
-    --entry: var(--tinsel-red);
-}
-
 /* (the sheet's height is the bottom half's, with room above it for the
    top half to open into) */
 .slip-sheet {

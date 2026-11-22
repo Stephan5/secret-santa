@@ -1,32 +1,42 @@
 // Snow: flakes falling down the window, behind everything (on `fall`, a
-// canvas fixed over the viewport), and gathering where they land on the
-// footer's divider (on `drift`, a canvas sitting on it). The drift is kept
-// here, not in the page, so it carries on building from page to page.
-// With reduced motion asked for: a still scatter of flakes, and the drift
-// already settled.
+// canvas fixed over the viewport), and settling where they land on a
+// ledge: any `canvas.snowdrift` in the page, sat on top of something (the
+// footer's divider; on home, the steps' numbers and the start button). How
+// much each holds is kept here by its `data-ledge` name, not in the page,
+// so it carries on building from page to page. `data-taper` is how far in
+// from each end, in CSS pixels, it thins out to nothing (where the snow'd
+// slide off a rounded end). With reduced motion asked for: a still scatter
+// of flakes, and the snow already settled.
 
 type Flake = {x: number, y: number, r: number, vy: number, swayAmp: number, swayFreq: number, phase: number, alpha: number}
 
-// (the drift is a row of columns this wide, in CSS pixels, each with its
-// own depth of snow)
-const column = 3
-let pile: number[] | null = null
+type Ledge = {
+    canvas: HTMLCanvasElement
+    context: CanvasRenderingContext2D
+    name: string
+    width: number
+    height: number
+    caps: number[]
+    changed: boolean
+}
 
-export function startSnow(fall: HTMLCanvasElement, drift: HTMLCanvasElement): () => void {
+// (a ledge's snow is a row of columns this wide, in CSS pixels, each with
+// its own depth)
+const column = 3
+const piles = new Map<string, number[]>()
+
+export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => void {
     const fallContext = fall.getContext('2d')
-    const driftContext = drift.getContext('2d')
-    if (!fallContext || !driftContext) return () => {}
+    if (!fallContext) return () => {}
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
     const sprite = flakeSprite()
 
     let width = 0
     let height = 0
-    let driftWidth = 0
-    let driftHeight = 0
     let ratio = 1
-    let caps: number[] = []
-    let driftChanged = true
     const flakes: Flake[] = []
+    let ledges: Ledge[] = []
+    const observer = new ResizeObserver(() => { for (const ledge of ledges) size(ledge); if (reduced) draw() })
 
     function newFlake(anywhere: boolean): Flake {
         // mostly small, far-off flakes; a few big, near ones, falling faster
@@ -50,34 +60,58 @@ export function startSnow(fall: HTMLCanvasElement, drift: HTMLCanvasElement): ()
         fall.width = Math.round(width * ratio)
         fall.height = Math.round(height * ratio)
         fallContext!.setTransform(ratio, 0, 0, ratio, 0, 0)
-
-        const box = drift.getBoundingClientRect()
-        driftWidth = box.width
-        driftHeight = box.height
-        drift.width = Math.round(driftWidth * ratio)
-        drift.height = Math.round(driftHeight * ratio)
-        driftContext!.setTransform(ratio, 0, 0, ratio, 0, 0)
-
-        const columns = Math.max(2, Math.ceil(driftWidth / column) + 1)
-        caps = driftCaps(columns, driftHeight)
-        if (!pile || pile.length !== columns) {
-            // (resampled from what had gathered at the old width, or, the
-            // first time, a dusting to start from)
-            pile = pile ? resample(pile, columns) : caps.map(cap => cap * 0.25)
-        }
-        if (reduced) pile = caps.slice()
-        for (let i = 0; i < columns; i++) pile[i] = Math.min(pile[i], caps[i])
-        driftChanged = true
+        for (const ledge of ledges) size(ledge)
 
         const wanted = Math.min(400, Math.round((width * height) / 2000))
         while (flakes.length < wanted) flakes.push(newFlake(true))
         flakes.length = wanted
     }
 
-    // A flake landed in column i: its snow, spread a little either side,
-    // then let slide down any slope too steep to hold.
-    function deposit(i: number, r: number) {
-        const p = pile!
+    // (the ledges in the page now, keeping any already known; the page's
+    // content can change under it)
+    function findLedges() {
+        const found = [...root.querySelectorAll<HTMLCanvasElement>('canvas.snowdrift')]
+        const kept = ledges.filter(ledge => found.includes(ledge.canvas))
+        for (const ledge of ledges) if (!kept.includes(ledge)) observer.unobserve(ledge.canvas)
+        for (const canvas of found) {
+            if (kept.some(ledge => ledge.canvas === canvas)) continue
+            const context = canvas.getContext('2d')
+            if (!context) continue
+            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, caps: [], changed: true}
+            size(ledge)
+            observer.observe(canvas)
+            kept.push(ledge)
+        }
+        ledges = kept
+    }
+
+    // A ledge's size, and so how much snow it can hold where
+    function size(ledge: Ledge) {
+        const box = ledge.canvas.getBoundingClientRect()
+        // (its own size, before any turn it's given: offsetWidth and so on)
+        ledge.width = ledge.canvas.offsetWidth || box.width
+        ledge.height = ledge.canvas.offsetHeight || box.height
+        ledge.canvas.width = Math.round(ledge.width * ratio)
+        ledge.canvas.height = Math.round(ledge.height * ratio)
+        ledge.context.setTransform(ratio, 0, 0, ratio, 0, 0)
+
+        const columns = Math.max(2, Math.ceil(ledge.width / column) + 1)
+        ledge.caps = capsFor(columns, ledge.height, Number(ledge.canvas.dataset.taper ?? 36))
+        let pile = piles.get(ledge.name)
+        // (resampled from what had gathered at the old width, or, the first
+        // time, a dusting to start from)
+        if (!pile || pile.length !== columns) pile = pile ? resample(pile, columns) : ledge.caps.map(cap => cap * 0.25)
+        if (reduced) pile = ledge.caps.slice()
+        for (let i = 0; i < columns; i++) pile[i] = Math.min(pile[i], ledge.caps[i])
+        piles.set(ledge.name, pile)
+        ledge.changed = true
+    }
+
+    // A flake landed in column i of a ledge: its snow, spread a little either
+    // side, then let slide down any slope too steep to hold.
+    function deposit(ledge: Ledge, i: number, r: number) {
+        const p = piles.get(ledge.name)!
+        const caps = ledge.caps
         const amount = r * r * 1.7
         for (let d = -5; d <= 5; d++) {
             const j = i + d
@@ -94,25 +128,26 @@ export function startSnow(fall: HTMLCanvasElement, drift: HTMLCanvasElement): ()
                 }
             }
         }
-        driftChanged = true
+        ledge.changed = true
     }
 
-    function drawDrift() {
-        const p = pile!
-        const c = driftContext!
-        c.clearRect(0, 0, driftWidth, driftHeight)
+    function drawLedge(ledge: Ledge) {
+        const p = piles.get(ledge.name)!
+        const c = ledge.context
+        const {width: w, height: h} = ledge
+        c.clearRect(0, 0, w, h)
         c.beginPath()
-        c.moveTo(0, driftHeight)
-        c.lineTo(0, driftHeight - p[0])
+        c.moveTo(0, h)
+        c.lineTo(0, h - p[0])
         for (let i = 1; i < p.length; i++) {
             const x0 = (i - 1) * column
             const x1 = i * column
-            c.quadraticCurveTo(x0, driftHeight - p[i - 1], (x0 + x1) / 2, driftHeight - (p[i - 1] + p[i]) / 2)
+            c.quadraticCurveTo(x0, h - p[i - 1], (x0 + x1) / 2, h - (p[i - 1] + p[i]) / 2)
         }
-        c.lineTo(driftWidth, driftHeight - p[p.length - 1])
-        c.lineTo(driftWidth, driftHeight)
+        c.lineTo(w, h - p[p.length - 1])
+        c.lineTo(w, h)
         c.closePath()
-        const shade = c.createLinearGradient(0, 0, 0, driftHeight)
+        const shade = c.createLinearGradient(0, 0, 0, h)
         shade.addColorStop(0, '#ffffff')
         shade.addColorStop(1, '#c9d4ea')
         c.fillStyle = shade
@@ -120,7 +155,7 @@ export function startSnow(fall: HTMLCanvasElement, drift: HTMLCanvasElement): ()
         c.shadowBlur = 6
         c.fill()
         c.shadowBlur = 0
-        driftChanged = false
+        ledge.changed = false
     }
 
     function drawFlakes() {
@@ -134,57 +169,60 @@ export function startSnow(fall: HTMLCanvasElement, drift: HTMLCanvasElement): ()
         c.globalAlpha = 1
     }
 
+    function draw() {
+        drawFlakes()
+        for (const ledge of ledges) if (ledge.changed) drawLedge(ledge)
+    }
+
     let last = performance.now()
     let frame = 0
+    let frames = 0
     function tick(now: number) {
         const dt = Math.min(0.05, (now - last) / 1000)
         last = now
         const t = now / 1000
         const wind = Math.sin(t * 0.07) * 10 + Math.sin(t * 0.23) * 4
-        const line = drift.getBoundingClientRect()
-        const p = pile!
+        if (++frames % 60 === 0) findLedges()
+        const boxes = ledges.map(ledge => ledge.canvas.getBoundingClientRect())
 
-        for (let n = 0; n < flakes.length; n++) {
+        flakes: for (let n = 0; n < flakes.length; n++) {
             const flake = flakes[n]
             flake.y += flake.vy * dt
             flake.x += (wind + Math.sin(t * flake.swayFreq + flake.phase) * flake.swayAmp) * dt
             if (flake.x < -10) flake.x += width + 20
             if (flake.x > width + 10) flake.x -= width + 20
 
-            // landing on the drift, where it's in view
-            if (flake.x >= line.left && flake.x < line.right) {
-                const i = Math.min(p.length - 1, Math.floor((flake.x - line.left) / column))
-                const surface = line.bottom - p[i]
-                if (flake.y >= surface && flake.y <= line.bottom + 6) {
-                    deposit(i, flake.r)
+            // landing on a ledge, where it's in view
+            for (let k = 0; k < ledges.length; k++) {
+                const box = boxes[k]
+                if (flake.x < box.left || flake.x >= box.right) continue
+                const ledge = ledges[k]
+                const p = piles.get(ledge.name)!
+                const i = Math.min(p.length - 1, Math.floor(((flake.x - box.left) / box.width) * ledge.width / column))
+                const surface = box.bottom - p[i]
+                if (flake.y >= surface && flake.y <= box.bottom + 6) {
+                    deposit(ledge, i, flake.r)
                     flakes[n] = newFlake(false)
-                    continue
+                    continue flakes
                 }
             }
             if (flake.y > height + 10) flakes[n] = newFlake(false)
         }
 
-        drawFlakes()
-        if (driftChanged) drawDrift()
+        draw()
         frame = requestAnimationFrame(tick)
     }
 
     function onResize() {
         resize()
-        if (reduced) { drawFlakes(); drawDrift() }
+        if (reduced) draw()
     }
 
+    findLedges()
     resize()
-    if (reduced) {
-        drawFlakes()
-        drawDrift()
-    } else {
-        frame = requestAnimationFrame(tick)
-    }
+    if (reduced) draw()
+    else frame = requestAnimationFrame(tick)
     addEventListener('resize', onResize)
-    // (the footer can move without the window resizing, as the page fills)
-    const observer = new ResizeObserver(onResize)
-    observer.observe(drift)
 
     return () => {
         cancelAnimationFrame(frame)
@@ -193,17 +231,16 @@ export function startSnow(fall: HTMLCanvasElement, drift: HTMLCanvasElement): ()
     }
 }
 
-// How deep the snow can get along the line: most of the drift's height,
-// rising and falling gently, and thinning out to nothing at the ends,
-// where it'd slide off.
-function driftCaps(columns: number, height: number): number[] {
+// How deep the snow can get along a ledge: most of its height, rising and
+// falling gently, and thinning out to nothing `taper` from the ends.
+function capsFor(columns: number, height: number, taper: number): number[] {
     const caps: number[] = []
     for (let i = 0; i < columns; i++) {
         const x = i * column
         const lumps = 0.72 + 0.16 * Math.sin(x / 37 + 1.3) + 0.12 * Math.sin(x / 13 + 0.4)
         const fromEnd = Math.min(i, columns - 1 - i) * column
-        const taper = Math.min(1, fromEnd / 36) ** 0.8
-        caps[i] = height * 0.9 * lumps * taper
+        const thinning = Math.min(1, fromEnd / Math.max(1, taper)) ** 0.8
+        caps[i] = height * 0.9 * lumps * thinning
     }
     return caps
 }

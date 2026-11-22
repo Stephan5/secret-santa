@@ -34,7 +34,7 @@ export function GroupPage({groupId}: {groupId: string}) {
                 {current && <p className="lede">{current.name}</p>}
             </header>
 
-            {!current && <p className="card">Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
+            {!current && <p className="card card-gold">Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
             {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} nameOf={nameOf} />}
 
             {earlier.length > 0 && (
@@ -59,7 +59,7 @@ export function GroupPage({groupId}: {groupId: string}) {
 function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Draw, onRevealed: () => void, nameOf: (id: string) => string}) {
     if (draw.status === 'pending') {
         return (
-            <section className="card">
+            <section className="card card-gold">
                 <p>Names haven't been drawn yet. Check back once the organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
             </section>
@@ -142,7 +142,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
 
     const person = people.find(p => p.id === chosen)
     return (
-        <section className="card reveal-picker">
+        <section className="card card-red reveal-picker">
             {!confirming && (
                 <form className="stack" onSubmit={event => { event.preventDefault(); if (person) setConfirming(true) }}>
                     <label className="field">

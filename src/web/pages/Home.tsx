@@ -11,26 +11,42 @@ export function Home() {
                     Enter everyone's names, draw them in one go, and send out the link.
                     An easy way to fairly sort out secret santa, with minimal peeking.
                 </p>
-                <Link href={paths.create} className="button button-primary button-large">Start a Secret Santa</Link>
+                <Link href={paths.create} className="button button-primary button-large snowy">
+                    Start a Secret Santa
+                    <canvas className="snowdrift" data-ledge="start" data-taper="24" aria-hidden="true" />
+                </Link>
             </section>
 
             <ol className="steps">
                 <li>
+                    <StepKey n={1} />
                     <h2>Put the names in the hat</h2>
                     <p>Add rules: couples who shouldn't draw each other, nobody gets who they drew last year.</p>
                 </li>
                 <li>
+                    <StepKey n={2} />
                     <h2>Draw</h2>
                     <p>Everyone is drawn at once, so nobody is left holding their own name, and not even you know who
                         got whom.</p>
                 </li>
                 <li>
+                    <StepKey n={3} />
                     <h2>Send the link</h2>
                     <p>Each name opens on one device only, so if anyone peeks, it shows. Reveal the results on Christmas
                         Day, if you like.</p>
                 </li>
             </ol>
         </Page>
+    )
+}
+
+// A step's number, on a key with snow settling on it (snow.ts)
+function StepKey({n}: {n: number}) {
+    return (
+        <span className="step-key" aria-hidden="true">
+            {n}
+            <canvas className="snowdrift" data-ledge={`step-${n}`} data-taper="7" />
+        </span>
     )
 }
 

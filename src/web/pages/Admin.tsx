@@ -60,7 +60,7 @@ function SignIn({group, onSignedIn}: {group: Group, onSignedIn: (token: string) 
     return (
         <Page title={group.name}>
             <h1>{group.name}</h1>
-            <form className="card stack" onSubmit={submit}>
+            <form className="card card-gold stack" onSubmit={submit}>
                 <label className="field">
                     <span className="label">Organiser password</span>
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" autoFocus />
@@ -114,7 +114,7 @@ function Organiser(props: SectionProps) {
                 <GroupName {...props} />
             </header>
 
-            <section className="card stack">
+            <section className="card card-gold stack">
                 <h2>Send everyone this link</h2>
                 <CopyLink url={link} />
                 <p className="hint">
@@ -181,7 +181,7 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
     }
 
     return (
-        <section className="card stack">
+        <section className="card card-green stack">
             <h2>Names in the hat</h2>
             {active.length === 0 && <p className="muted">Nobody yet.</p>}
             <ul className="people">
@@ -247,7 +247,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
     const save = (changes: Partial<Rules>) => act(() => client.saveRules({...rules, ...changes}))
 
     return (
-        <section className="card stack">
+        <section className="card card-ice stack">
             <h2>Rules</h2>
 
             <div className="field">
@@ -344,13 +344,13 @@ function Draws(props: SectionProps) {
     }
 
     return (
-        <section className="stack">
+        <section className="stack draws">
             <div className="title-row">
                 <h2>Draws</h2>
                 {!creating && <button type="button" className="button" onClick={startCreating}>New draw</button>}
             </div>
             {creating && (
-                <form className="card stack" onSubmit={async event => {
+                <form className="card card-violet stack" onSubmit={async event => {
                     event.preventDefault()
                     const created = await act(() => client.createDraw({
                         name,

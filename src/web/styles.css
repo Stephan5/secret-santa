@@ -59,6 +59,7 @@
     --tinsel-green: #5ee68a;
     --tinsel-gold: #ffd257;
     --tinsel-ice: #8ce6ff;
+    --tinsel-violet: #c79cff;
 
     --bg: var(--space);
     --surface: var(--screen);
@@ -134,7 +135,11 @@ h1 {
     font-size: clamp(2.1rem, 8vw, 3rem);
     line-height: 1.05;
     color: #fff;
-    text-shadow: 0.06em 0.06em 0 var(--red);
+    /* (and the frost every bit of text on the sky has: Page.css) */
+    text-shadow:
+        0.06em 0.06em 0 var(--red),
+        0 0 0.45em rgb(10 12 30 / 0.85),
+        0 0 0.9em rgb(10 12 30 / 0.6);
 }
 
 /* Selected text: frosted over, as it is, without its shadow */
@@ -231,8 +236,9 @@ a {
     gap: 0.5rem 1rem;
 }
 
-/* A screen: black, edged in its own tinsel colour
-   (--entry), glowing faintly. They take the colours in turn down a page. */
+/* A screen: black, edged in its own tinsel colour (--entry), glowing
+   faintly. Each says which colour it is (card-gold and so on), so that
+   none on a page is next to one the same. */
 .card {
     --entry: var(--tinsel-ice);
     background: var(--surface);
@@ -244,25 +250,18 @@ a {
         0 1rem 2rem var(--shadow);
 }
 
-main > .card:nth-child(4n + 1),
-main > * > .card:nth-child(4n + 1) {
-    --entry: var(--tinsel-gold);
-}
+.card-gold { --entry: var(--tinsel-gold); }
+.card-green { --entry: var(--tinsel-green); }
+.card-red { --entry: var(--tinsel-red); }
+.card-ice { --entry: var(--tinsel-ice); }
+.card-violet { --entry: var(--tinsel-violet); }
 
-main > .card:nth-child(4n + 2),
-main > * > .card:nth-child(4n + 2) {
-    --entry: var(--tinsel-green);
-}
-
-main > .card:nth-child(4n + 3),
-main > * > .card:nth-child(4n + 3) {
-    --entry: var(--tinsel-red);
-}
-
-/* (the name picker's always red: it's the one everyone sees) */
-main > .reveal-picker.card {
-    --entry: var(--tinsel-red);
-}
+/* (a list of them takes two in turn: the draws on the organiser's page,
+   earlier draws on everyone's) */
+.draws > .draw-card:nth-of-type(odd) { --entry: var(--tinsel-red); }
+.draws > .draw-card:nth-of-type(even) { --entry: var(--tinsel-violet); }
+.earlier > .card:nth-of-type(odd) { --entry: var(--tinsel-green); }
+.earlier > .card:nth-of-type(even) { --entry: var(--tinsel-violet); }
 
 .card h2,
 .card h3 {

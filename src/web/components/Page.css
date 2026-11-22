@@ -21,7 +21,7 @@
     pointer-events: none;
 }
 
-.snowdrift {
+.footer > .snowdrift {
     position: absolute;
     left: 0;
     bottom: 100%;
@@ -31,7 +31,9 @@
 }
 
 /* Candy-stripe ribbon */
+/* (never squeezed out by the page's column, as Safari would) */
 .ribbon {
+    flex: none;
     height: 0.4rem;
     background: repeating-linear-gradient(-45deg, var(--red) 0 0.6rem, #fff 0.6rem 1.2rem);
 }
@@ -112,7 +114,6 @@ main.column {
 
 .steps {
     list-style: none;
-    counter-reset: step;
     margin: 0;
     padding: 0;
     display: grid;
@@ -120,13 +121,12 @@ main.column {
 }
 
 .steps li {
-    counter-increment: step;
     position: relative;
     padding-left: 3.25rem;
 }
 
-.steps li::before {
-    content: counter(step);
+/* a step's number, on a key (Home.tsx), for snow to settle on */
+.step-key {
     position: absolute;
     left: 0;
     top: 0;
@@ -140,18 +140,41 @@ main.column {
     font-family: var(--friendly);
     font-size: 1.2rem;
     font-weight: 800;
+    text-shadow: none;
     box-shadow: inset 0 0.12rem 0 rgb(255 255 255 / 0.3), inset 0 -0.22rem 0 rgb(0 0 0 / 0.3);
     rotate: -4deg;
 }
 
-.steps li:nth-child(2)::before {
+.steps li:nth-child(2) .step-key {
     background: var(--tinsel-green);
     rotate: 3deg;
 }
 
-.steps li:nth-child(3)::before {
+.steps li:nth-child(3) .step-key {
     background: var(--tinsel-gold);
     rotate: -2deg;
+}
+
+/* (the snow on a key, or on the start button: shallow, so it sits on top
+   without hiding much) */
+.step-key .snowdrift,
+.snowy .snowdrift {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% - 0.15rem);
+    width: 100%;
+    height: 0.6rem;
+    pointer-events: none;
+}
+
+.snowy {
+    position: relative;
+}
+
+.snowy .snowdrift {
+    left: 0.5rem;
+    width: calc(100% - 1rem);
+    height: 0.7rem;
 }
 
 .steps h2 {
@@ -268,4 +291,24 @@ details[open] summary {
 
 .draw-card h3 {
     font-size: 1.35rem;
+}
+
+/* Frost: text on the sky has a soft halo of the sky round its letters, so
+   the snow fades out as it passes close behind them. (Not on what has a
+   background of its own: buttons, keys, the paper.) */
+main,
+.footer {
+    text-shadow:
+        0 0 0.15em rgb(10 12 30 / 0.95),
+        0 0 0.3em rgb(10 12 30 / 0.95),
+        0 0 0.6em rgb(10 12 30 / 0.85),
+        0 0 1.1em rgb(10 12 30 / 0.6);
+}
+
+.button,
+.slip-sheet,
+input,
+select,
+textarea {
+    text-shadow: none;
 }
