@@ -76,10 +76,11 @@ resource "aws_cloudfront_response_headers_policy" "security" {
   }
 }
 
-# What the API gets from the browser's request: its body's type and hash
-# (the hash for CloudFront's signature over it), the organiser's session,
-# and the viewer's address, for rate limiting. Not Host: the function URL
-# needs its own.
+# What the API gets from the browser's request: its body's type, the
+# organiser's session, and the viewer's address, for rate limiting. Not
+# Host: the function URL needs its own. (Nor x-amz-content-sha256, the
+# body's hash: CloudFront takes that itself, for its signature, and won't
+# have it in a policy.)
 resource "aws_cloudfront_origin_request_policy" "api" {
   name = "${var.name}-api"
 
@@ -91,7 +92,7 @@ resource "aws_cloudfront_origin_request_policy" "api" {
     header_behavior = "whitelist"
 
     headers {
-      items = ["content-type", "x-amz-content-sha256", "x-admin-token", "CloudFront-Viewer-Address"]
+      items = ["content-type", "x-admin-token", "CloudFront-Viewer-Address"]
     }
   }
 
