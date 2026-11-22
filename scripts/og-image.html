@@ -70,6 +70,19 @@
             height: 70px;
         }
 
+        /* behind the words, the snow goes out of focus, fading back in
+           towards the edges, so the flakes don't muddle the letters */
+        .haze {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 1100px;
+            height: 560px;
+            transform: translate(-50%, -54%);
+            backdrop-filter: blur(6px);
+            mask-image: radial-gradient(closest-side, #000 50%, transparent);
+        }
+
         .card {
             position: relative;
             display: flex;
@@ -118,6 +131,7 @@
 </head>
 <body>
 <canvas id="snow" width="1200" height="630"></canvas>
+<div class="haze"></div>
 <div class="card">
     <img class="present" src="../public/favicon.svg" alt=""/>
     <h1>Secret Santa</h1>
