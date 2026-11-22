@@ -26,3 +26,6 @@ dist-api
 infra/.build
 *.tfvars
 !*.tfvars.example
+
+# DynamoDB Local, if started from here
+dynamodb-local-metadata.json
