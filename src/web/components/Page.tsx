@@ -24,7 +24,7 @@ export function Page({title, children, wide = false}: {title?: string, children:
             <div className="ribbon" aria-hidden="true" />
             <main className={wide ? 'column column-wide' : 'column'}>{children}</main>
             <footer className={wide ? 'footer column column-wide' : 'footer column'}>
-                <canvas className="snowdrift" data-ledge="footer" data-depth="28" data-taper="36" aria-hidden="true" />
+                <canvas className="snowdrift" data-ledge="footer" data-depth="28" data-hang="3" data-taper="36" aria-hidden="true" />
                 <Link href={paths.home} className="wordmark">
                     <img src="/favicon.svg" alt="" width="20" height="20" />
                     Secret Santa
