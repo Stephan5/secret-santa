@@ -13,7 +13,7 @@ export function Home() {
                 </p>
                 <Link href={paths.create} className="button button-primary button-large snowy">
                     Start a Secret Santa
-                    <canvas className="snowdrift" data-ledge="start" data-depth="11" aria-hidden="true" />
+                    <canvas className="snowdrift" data-ledge="start" data-depth="10" data-hang="5" aria-hidden="true" />
                 </Link>
             </section>
 
@@ -45,7 +45,7 @@ function StepKey({n}: {n: number}) {
     return (
         <span className="step-key" aria-hidden="true">
             {n}
-            <canvas className="snowdrift" data-ledge={`step-${n}`} data-depth="9" />
+            <canvas className="snowdrift" data-ledge={`step-${n}`} data-depth="6" data-hang="4" />
         </span>
     )
 }

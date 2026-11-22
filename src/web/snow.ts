@@ -4,7 +4,8 @@
 // footer's divider; on home, the steps' numbers and the start button). How
 // much each holds is kept here by its `data-ledge` name, not in the page,
 // so it carries on building from page to page. `data-depth` is how deep, in
-// CSS pixels, it can get. The snow lies along the top of what the ledge is
+// CSS pixels, it can get; `data-hang`, how far it can hang over the front
+// edge, as snow on a ledge does. The snow lies along the top of what the ledge is
 // on, round its corners as they curve away (so the canvas is sized and
 // placed here, reaching down over them), thinning out to nothing where it
 // would slide off. With reduced motion asked for: a still scatter of
@@ -20,6 +21,10 @@ type Ledge = {
     height: number
     // (the top of what it's on, down from the canvas's top, at each column)
     base: number[]
+    hang: number
+    // (how far it hangs at each column, of the most it could: uneven, and
+    // the same each time it's drawn)
+    lumps: number[]
     caps: number[]
     changed: boolean
 }
@@ -81,7 +86,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             if (kept.some(ledge => ledge.canvas === canvas)) continue
             const context = canvas.getContext('2d')
             if (!context) continue
-            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], caps: [], changed: true}
+            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, lumps: [], caps: [], changed: true}
             size(ledge)
             observer.observe(canvas)
             kept.push(ledge)
@@ -97,12 +102,15 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         const width = on.offsetWidth
         const corner = Math.min(parseFloat(getComputedStyle(on).borderTopLeftRadius) || 0, on.offsetHeight / 2, width / 2)
         const depth = Number(canvas.dataset.depth ?? 12)
+        ledge.hang = Number(canvas.dataset.hang ?? 0)
+        // (reaching down over the corners, and as far as the snow hangs)
+        const reach = Math.max(corner, ledge.hang)
         canvas.style.left = '0'
         canvas.style.width = `${width}px`
-        canvas.style.height = `${depth + corner}px`
-        canvas.style.bottom = `calc(100% - ${corner}px)`
+        canvas.style.height = `${depth + reach}px`
+        canvas.style.bottom = `calc(100% - ${reach}px)`
         ledge.width = width
-        ledge.height = depth + corner
+        ledge.height = depth + reach
         canvas.width = Math.round(ledge.width * ratio)
         canvas.height = Math.round(ledge.height * ratio)
         ledge.context.setTransform(ratio, 0, 0, ratio, 0, 0)
@@ -117,6 +125,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         }
         // (and none holds where what it's on is steeper than 45 degrees,
         // less the steeper it gets on the way)
+        ledge.lumps = lumpsFor(columns, ledge.name)
         ledge.caps = capsFor(columns, depth, Number(canvas.dataset.taper ?? 0)).map((cap, i) => {
             const slope = Math.abs(ledge.base[Math.min(columns - 1, i + 1)] - ledge.base[Math.max(0, i - 1)]) / (2 * column)
             return cap * Math.max(0, 1 - slope) ** 2
@@ -171,8 +180,16 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             c.quadraticCurveTo(x(i - 1), base[i - 1] - p[i - 1], midX, midY)
         }
         c.lineTo(w, base[p.length - 1] - p[p.length - 1])
-        // ...and back along what it's lying on
-        for (let i = p.length - 1; i >= 0; i--) c.lineTo(x(i), base[i])
+        // ...and back along its underside: what it's lying on, less where it
+        // hangs over the front, more the deeper it is above, in uneven lumps
+        const lumps = ledge.lumps
+        const under = (i: number) => base[i] + Math.min(ledge.hang, p[i] * 0.7) * lumps[i]
+        c.lineTo(w, under(p.length - 1))
+        for (let i = p.length - 2; i >= 0; i--) {
+            const midX = (x(i + 1) + x(i)) / 2
+            c.quadraticCurveTo(x(i + 1), under(i + 1), midX, (under(i + 1) + under(i)) / 2)
+        }
+        c.lineTo(0, under(0))
         c.closePath()
         const shade = c.createLinearGradient(0, 0, 0, h)
         shade.addColorStop(0, '#ffffff')
@@ -272,6 +289,29 @@ function capsFor(columns: number, height: number, taper: number): number[] {
         caps[i] = height * 0.9 * lumps * thinning
     }
     return caps
+}
+
+// Uneven lumps along a ledge, between 0.3 and 1: a value every few columns,
+// picked from the ledge's name, eased between, so the snow's underside
+// rounds over from one to the next.
+function lumpsFor(columns: number, name: string): number[] {
+    let seed = 0
+    for (const char of name) seed = (seed * 31 + char.codePointAt(0)!) >>> 0
+    const knot = (k: number) => {
+        let h = (seed ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0
+        h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0
+        h = (h ^ (h >>> 13)) >>> 0
+        return 0.3 + 0.7 * (h / 0xffffffff)
+    }
+    const every = 3
+    const lumps: number[] = []
+    for (let i = 0; i < columns; i++) {
+        const k = Math.floor(i / every)
+        const t = (i % every) / every
+        const eased = (1 - Math.cos(t * Math.PI)) / 2
+        lumps[i] = knot(k) * (1 - eased) + knot(k + 1) * eased
+    }
+    return lumps
 }
 
 function resample(from: number[], columns: number): number[] {
