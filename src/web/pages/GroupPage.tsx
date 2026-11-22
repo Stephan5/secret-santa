@@ -35,7 +35,6 @@ export function GroupPage({groupId}: {groupId: string}) {
         <Page title={group.name}>
             <header className="group-head">
                 <h1>{group.name}</h1>
-                {current && <p className="lede">{current.name}</p>}
             </header>
 
             {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
@@ -64,6 +63,7 @@ function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Dra
         return (
             <section className="card card-gold">
                 <Snowdrift ledge="not-drawn" />
+                <h2 className="draw-title">{draw.name}</h2>
                 <p>Names haven't been drawn yet. Check back once the organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
             </section>
@@ -131,7 +131,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
     if (shown) {
         return (
             <section className="reveal">
-                <Slip forName={shown.person.name} receiverName={shown.receiverName} unfold={shown.fresh} />
+                <Slip drawName={draw.name} forName={shown.person.name} receiverName={shown.receiverName} unfold={shown.fresh} />
                 {remembered
                     ? <p className="muted center">This device will remember, so you can come back any time to check.</p>
                     : <p className="warning center">This browser can't remember it (private browsing?), and it can't be opened again anywhere else, so screenshot it or write it down.</p>}
@@ -148,6 +148,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
     return (
         <section className="card card-red reveal-picker">
             <Snowdrift ledge="reveal" />
+            <h2 className="draw-title">{draw.name}</h2>
             {!confirming && (
                 <form className="stack" onSubmit={event => { event.preventDefault(); if (person) setConfirming(true) }}>
                     <label className="field">

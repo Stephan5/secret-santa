@@ -15,11 +15,12 @@ import './Slip.css'
 // right first: its right side swings over (`slip-right`, printed both
 // sides), leaving the bottom half's pattern showing, the top half folded
 // down over it (`slip-flap`); then that swings up.
-export function Slip({forName, receiverName, unfold}: {forName: string, receiverName: string, unfold: boolean}) {
+export function Slip({drawName, forName, receiverName, unfold}: {drawName: string, forName: string, receiverName: string, unfold: boolean}) {
     const size = {fontSize: `${nameSize(receiverName)}rem`}
     return (
         <div className={unfold ? 'card card-red slip slip-unfold' : 'card card-red slip'} role="status" aria-live="polite">
             <Snowdrift ledge="reveal" />
+            <h2 className="draw-title">{drawName}</h2>
             <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheet">
                 <div className="slip-half slip-lower">

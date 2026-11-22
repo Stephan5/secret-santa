@@ -183,6 +183,16 @@ main.column {
 
 /* A group */
 
+/* (the draw a panel is for, at its top) */
+.draw-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.slip .draw-title {
+    text-align: center;
+}
+
 .group-head {
     display: flex;
     flex-direction: column;
