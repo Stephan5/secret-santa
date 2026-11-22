@@ -5,15 +5,26 @@
 .slip {
     --half: 6rem;
     --print: url('../wrapping-paper.svg') 0 0 / 6rem 6rem, #17463a;
-    margin: 1rem auto 1.5rem;
-    width: min(100%, 17rem);
+    padding: 1.5rem 1.25rem 2.25rem;
+    margin-bottom: 1.25rem;
+    /* (a column, so the space under who it's for and the room above the
+       sheet don't collapse into one) */
+    display: flex;
+    flex-direction: column;
+}
+
+/* (in a panel edged red, as the name picker it takes the place of; the
+   attribute only to outrank the panels' turn-by-turn colours) */
+main .slip.card[role="status"] {
+    --entry: var(--tinsel-red);
 }
 
 /* (the sheet's height is the bottom half's, with room above it for the
    top half to open into) */
 .slip-sheet {
     position: relative;
-    margin-top: var(--half);
+    width: min(100%, 17rem);
+    margin: var(--half) auto 0;
     perspective: 32rem;
     rotate: -1.5deg;
     filter: drop-shadow(0 0.8rem 1.2rem rgb(0 0 0 / 0.55));
@@ -121,7 +132,7 @@
 
 /* Who it's for, above the sheet */
 p.slip-for {
-    margin: 0 0 0.75rem;
+    margin: 0 0 1.5rem;
     font-family: var(--mono);
     font-size: 0.9rem;
     letter-spacing: 0.02em;
