@@ -22,9 +22,6 @@ type Ledge = {
     // (the top of what it's on, down from the canvas's top, at each column)
     base: number[]
     hang: number
-    // (how far it hangs at each column, of the most it could: uneven, and
-    // the same each time it's drawn)
-    lumps: number[]
     caps: number[]
     changed: boolean
 }
@@ -88,7 +85,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             if (kept.some(ledge => ledge.canvas === canvas)) continue
             const context = canvas.getContext('2d')
             if (!context) continue
-            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, lumps: [], caps: [], changed: true}
+            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, caps: [], changed: true}
             size(ledge)
             observer.observe(canvas)
             kept.push(ledge)
@@ -127,7 +124,6 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         }
         // (and none holds where what it's on is steeper than 45 degrees,
         // less the steeper it gets on the way)
-        ledge.lumps = lumpsFor(columns, ledge.name)
         ledge.caps = capsFor(columns, depth, Number(canvas.dataset.taper ?? 0)).map((cap, i) => {
             const slope = Math.abs(ledge.base[Math.min(columns - 1, i + 1)] - ledge.base[Math.max(0, i - 1)]) / (2 * column)
             return cap * Math.max(0, 1 - slope) ** 2
@@ -142,28 +138,44 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         ledge.changed = true
     }
 
-    // A flake landed in column i of a ledge: its snow, spread a little either
-    // side, then let slide down any slope too steep to hold.
+    // A flake landed in column i of a ledge: its snow, spread softly either
+    // side. (settle smooths it in.)
     function deposit(ledge: Ledge, i: number, r: number) {
         const p = piles.get(ledge.name)!
         const caps = ledge.caps
         const amount = r * r * 0.75
-        for (let d = -6; d <= 6; d++) {
+        for (let d = -12; d <= 12; d++) {
             const j = i + d
             if (j < 0 || j >= p.length) continue
-            p[j] = Math.min(caps[j], p[j] + amount * Math.exp(-(d * d) / 12) / 6.1)
-        }
-        for (let pass = 0; pass < 4; pass++) {
-            for (let j = Math.max(0, i - 12); j < Math.min(p.length - 1, i + 12); j++) {
-                const excess = p[j] - p[j + 1]
-                if (Math.abs(excess) > column * 0.60) {
-                    const move = (Math.abs(excess) - column * 0.60) / 2
-                    if (excess > 0) { p[j] -= move; p[j + 1] = Math.min(caps[j + 1], p[j + 1] + move) }
-                    else { p[j + 1] -= move; p[j] = Math.min(caps[j], p[j] + move) }
-                }
-            }
+            p[j] = Math.min(caps[j], p[j] + amount * Math.exp(-(d * d) / 50) / 12.5)
         }
         ledge.changed = true
+    }
+
+    // The snow on a ledge evening out as it lies: how full each column is,
+    // of the most it can hold, eased towards its neighbours', so any bump a
+    // flake leaves melts into the rest within a second or so and the snow
+    // grows as one smooth drift, the shape of its caps, not grain by grain.
+    function settle(ledge: Ledge, dt: number) {
+        const p = piles.get(ledge.name)!
+        const caps = ledge.caps
+        const n = p.length
+        const k = Math.min(0.45, 15 * dt)
+        const full = (j: number) => caps[j] > 0.01 ? p[j] / caps[j] : -1
+        let moved = 0
+        for (let pass = 0; pass < 2; pass++) {
+            const f = p.map((_, j) => full(j))
+            for (let j = 0; j < n; j++) {
+                if (f[j] < 0) continue
+                // (where a neighbour holds nothing, as at the very ends, as if it were this)
+                const left = j > 0 && f[j - 1] >= 0 ? f[j - 1] : f[j]
+                const right = j < n - 1 && f[j + 1] >= 0 ? f[j + 1] : f[j]
+                const next = Math.min(1, Math.max(0, f[j] + k * (left - 2 * f[j] + right))) * caps[j]
+                moved = Math.max(moved, Math.abs(next - p[j]))
+                p[j] = next
+            }
+        }
+        if (moved > 0.005) ledge.changed = true
     }
 
     function drawLedge(ledge: Ledge) {
@@ -182,11 +194,11 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             c.quadraticCurveTo(x(i - 1), base[i - 1] - p[i - 1], midX, midY)
         }
         c.lineTo(w, base[p.length - 1] - p[p.length - 1])
-        // ...and back along its underside: what it's lying on, less where it
-        // hangs a little over the front, in a shape of its own (not the top's
-        // turned over), fading out only where the snow above runs out
-        const {lumps, hang} = ledge
-        const under = (i: number) => base[i] + hang * lumps[i] * Math.min(1, p[i] / 2.5)
+        // ...and back along its underside: what it's lying on, less an even
+        // lip where it hangs a little over the front, as deep as the snow
+        // above lets it be, so it eases away to nothing at the ends
+        const {hang} = ledge
+        const under = (i: number) => base[i] + hang * Math.min(1, p[i] / (hang * 3 + 1))
         c.lineTo(w, under(p.length - 1))
         for (let i = p.length - 2; i >= 0; i--) {
             const midX = (x(i + 1) + x(i)) / 2
@@ -232,6 +244,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         const wind = Math.sin(t * 0.07) * 10 + Math.sin(t * 0.23) * 4
         if (++frames % 60 === 0) findLedges()
         const boxes = ledges.map(ledge => ledge.canvas.getBoundingClientRect())
+        for (const ledge of ledges) settle(ledge, dt)
 
         flakes: for (let n = 0; n < flakes.length; n++) {
             const flake = flakes[n]
@@ -281,47 +294,28 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
 }
 
 // How deep the snow can get along a ledge: most of its height, rising and
-// falling gently, and thinning out to nothing `taper` from the ends.
+// falling gently in long, low drifts, and rounding off to nothing over
+// `taper` from the ends, as a pillow of snow does.
 function capsFor(columns: number, height: number, taper: number): number[] {
     const caps: number[] = []
     for (let i = 0; i < columns; i++) {
         const x = i * column
-        const lumps = 0.76 + 0.18 * Math.sin(x / 45 + 1.3) + 0.06 * Math.sin(x / 22 + 0.4)
+        const drifts = 0.78 + 0.16 * Math.sin(x / 60 + 1.3) + 0.06 * Math.sin(x / 31 + 0.4)
         const fromEnd = Math.min(i, columns - 1 - i) * column
-        const thinning = Math.min(1, fromEnd / Math.max(1, taper)) ** 0.8
-        caps[i] = height * 0.9 * lumps * thinning
+        const u = Math.min(1, fromEnd / Math.max(1, taper))
+        const thinning = Math.sqrt(1 - (1 - u) ** 2)
+        caps[i] = height * 0.9 * drifts * thinning
     }
     return caps
 }
 
-// How far the snow hangs along a ledge, of the most it could: mostly a thin,
-// even lip, with now and then a rounder drip. A value every few columns,
-// picked from the ledge's name, eased between, so it rounds over from one
-// to the next.
-function lumpsFor(columns: number, name: string): number[] {
-    let seed = 0
-    for (const char of name) seed = (seed * 31 + char.codePointAt(0)!) >>> 0
-    const knot = (k: number) => {
-        let h = (seed ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0
-        h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0
-        h = (h ^ (h >>> 13)) >>> 0
-        const pick = h / 0xffffffff
-        return pick < 0.2 ? 0.75 + pick * 1.25 : 0.25 + (pick - 0.2) * 0.25
-    }
-    const every = 4
-    const lumps: number[] = []
-    for (let i = 0; i < columns; i++) {
-        const k = Math.floor(i / every)
-        const t = (i % every) / every
-        const eased = (1 - Math.cos(t * Math.PI)) / 2
-        lumps[i] = knot(k) * (1 - eased) + knot(k + 1) * eased
-    }
-    return lumps
-}
-
 function resample(from: number[], columns: number): number[] {
     const to: number[] = []
-    for (let i = 0; i < columns; i++) to[i] = from[Math.min(from.length - 1, Math.round((i / Math.max(1, columns - 1)) * (from.length - 1)))]
+    for (let i = 0; i < columns; i++) {
+        const at = (i / Math.max(1, columns - 1)) * (from.length - 1)
+        const j = Math.min(from.length - 2, Math.floor(at))
+        to[i] = j < 0 ? from[0] : from[j] + (from[j + 1] - from[j]) * (at - j)
+    }
     return to
 }
 
