@@ -273,6 +273,13 @@ legend.label,
     color: var(--tinsel-ice);
 }
 
+/* (a fieldset's legend sits outside its flex layout, so it doesn't get
+   the gap a field's other label does: given it here) */
+legend.label {
+    padding: 0;
+    margin-bottom: 0.4rem;
+}
+
 .hint {
     font-size: 0.92rem;
     color: var(--muted);
