@@ -40,7 +40,7 @@ export function GroupPage({groupId}: {groupId: string}) {
                 <h1>{group.name}</h1>
             </header>
 
-            {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
+            {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the group organiser has drawn them.</p>}
             {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} onShown={setOpened} nameOf={nameOf} />}
 
             {earlier.length > 0 && (
@@ -71,7 +71,7 @@ function CurrentDraw({group, draw, onRevealed, onShown, nameOf}: {group: Group, 
             <section className="card card-gold">
                 <Snowdrift ledge="not-drawn" />
                 <h2 className="draw-title">{draw.name}</h2>
-                <p>Names haven't been drawn yet. Check back once the organiser has drawn them.</p>
+                <p>Names haven't been drawn yet. Check back once the group organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
             </section>
         )
@@ -177,7 +177,7 @@ function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, 
                         </button>
                         <p className="hint">
                             Each name opens on one device only. If yours says it's already been opened and it wasn't you,
-                            ask the organiser to reset it.
+                            ask the group organiser to reset it.
                         </p>
                     </form>
                     <div className={`stack confirm ${layer('confirm')}`} inert={off('confirm')}>
@@ -225,8 +225,8 @@ function StartYourOwn({heading}: {heading: string}) {
         <aside className="card card-green start-your-own">
             <h2>{heading}</h2>
             <p>
-                Work, friends, the other side of the family, the group chat that still can't agree on a budget:
-                start a Secret Santa of your own. It takes a couple of minutes, and nobody needs an account.
+                Work, friends, the other side of the family: start a Secret Santa of your own. It takes a
+                couple of minutes, and nobody needs an account.
             </p>
             <Link href={paths.create} className="button button-primary">Start your own Secret Santa</Link>
         </aside>
