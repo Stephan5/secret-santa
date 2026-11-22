@@ -33,6 +33,10 @@ const tune = {
     spread: 1,
     // (how fast the snow evens out as it lies; lower leaves it lumpier for longer)
     smoothing: 1,
+    // (how much more of it lands where the drifts are deepest: 0, an even
+    // blanket that only takes their shape as it fills up; 2, every bit of it
+    // in proportion, as if it were swelling up into them)
+    drifting: 1,
     // (how much snow there is on a ledge when it's first seen, of its fill)
     dusting: 1,
 
@@ -64,6 +68,8 @@ type Ledge = {
     base: number[]
     hang: number
     caps: number[]
+    // (how much of what lands on each column stays, of the average)
+    catches: number[]
     changed: boolean
 }
 
@@ -126,7 +132,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             if (kept.some(ledge => ledge.canvas === canvas)) continue
             const context = canvas.getContext('2d')
             if (!context) continue
-            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, caps: [], changed: true}
+            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], hang: 0, caps: [], catches: [], changed: true}
             size(ledge)
             observer.observe(canvas)
             kept.push(ledge)
@@ -169,10 +175,12 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             const slope = Math.abs(ledge.base[Math.min(columns - 1, i + 1)] - ledge.base[Math.max(0, i - 1)]) / (2 * column)
             return cap * Math.max(0, 1 - slope) ** 2
         })
+        const mean = ledge.caps.reduce((sum, cap) => sum + cap, 0) / columns || 1
+        ledge.catches = ledge.caps.map(cap => Math.max(0, 1 + 0.5 * tune.drifting * (cap / mean - 1)))
         let pile = piles.get(ledge.name)
         // (resampled from what had gathered at the old width, or, the first
-        // time, a dusting to start from)
-        if (!pile || pile.length !== columns) pile = pile ? resample(pile, columns) : ledge.caps.map(cap => Math.min(cap, cap * 0.25 * tune.dusting))
+        // time, an even dusting to start from)
+        if (!pile || pile.length !== columns) pile = pile ? resample(pile, columns) : ledge.caps.map(cap => Math.min(cap, mean * 0.15 * tune.dusting))
         if (reduced) pile = ledge.caps.slice()
         for (let i = 0; i < columns; i++) pile[i] = Math.min(pile[i], ledge.caps[i])
         piles.set(ledge.name, pile)
@@ -180,11 +188,12 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
     }
 
     // A flake landed in column i of a ledge: its snow, spread softly either
-    // side. (settle smooths it in.)
+    // side, more of it where the wind piles it up (where the drifts will be
+    // deepest), less where it blows off (the ends, the lows). It can heap up
+    // past what the ledge holds there for a moment, till settle lets it slide.
     function deposit(ledge: Ledge, i: number, r: number) {
         const p = piles.get(ledge.name)!
-        const caps = ledge.caps
-        const amount = r * r * 0.75 * tune.settling
+        const amount = r * r * 0.75 * tune.settling * ledge.catches[i]
         // (a bell curve, about 15px either side holding most of it, by default)
         const width = 50 * tune.spread ** 2
         const reach = Math.ceil(12 * tune.spread)
@@ -192,36 +201,65 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         for (let d = -reach; d <= reach; d++) {
             const j = i + d
             if (j < 0 || j >= p.length) continue
-            p[j] = Math.min(caps[j], p[j] + amount * Math.exp(-(d * d) / width) / whole)
+            p[j] += amount * Math.exp(-(d * d) / width) / whole
         }
         ledge.changed = true
     }
 
-    // The snow on a ledge evening out as it lies: how full each column is,
-    // of the most it can hold, eased towards its neighbours', so any bump a
-    // flake leaves melts into the rest within a second or so and the snow
-    // grows as one smooth drift, the shape of its caps, not grain by grain.
+    // The snow on a ledge settling as it lies: a little of it shuffling
+    // along to where it's shallower, so the bumps flakes leave soften into
+    // the rest, and wherever there's more than the ledge holds, the extra
+    // sliding off to either side, filling in the hollows beside it. So it builds up as an even blanket, then drifts,
+    // and only at the last fills out to the full shape of its caps.
     function settle(ledge: Ledge, dt: number) {
         const p = piles.get(ledge.name)!
-        const caps = ledge.caps
+        const {caps, base} = ledge
         const n = p.length
-        // (as many passes as it takes to ease that much without overshooting)
-        const total = 30 * dt * tune.smoothing
+        const before = p.slice()
+        // (as many passes as it takes to shuffle that much without overshooting)
+        const total = 15 * dt * tune.smoothing
         const passes = Math.max(1, Math.ceil(total / 0.45))
-        const k = Math.min(0.45, total / passes)
-        const full = (j: number) => caps[j] > 0.01 ? p[j] / caps[j] : -1
-        let moved = 0
+        const k = total / passes
         for (let pass = 0; pass < passes; pass++) {
-            const f = p.map((_, j) => full(j))
-            for (let j = 0; j < n; j++) {
-                if (f[j] < 0) continue
-                // (where a neighbour holds nothing, as at the very ends, as if it were this)
-                const left = j > 0 && f[j - 1] >= 0 ? f[j - 1] : f[j]
-                const right = j < n - 1 && f[j + 1] >= 0 ? f[j + 1] : f[j]
-                const next = Math.min(1, Math.max(0, f[j] + k * (left - 2 * f[j] + right))) * caps[j]
-                moved = Math.max(moved, Math.abs(next - p[j]))
-                p[j] = next
+            const q = p.slice()
+            for (let j = 0; j < n - 1; j++) {
+                // (from the deeper of each two side by side to the other, but
+                // only as much as there's room for)
+                const flow = k * (q[j] - q[j + 1])
+                const room = flow > 0 ? caps[j + 1] - q[j + 1] : caps[j] - q[j]
+                const moved = Math.sign(flow) * Math.min(Math.abs(flow), Math.max(0, room))
+                p[j] -= moved
+                p[j + 1] += moved
             }
+        }
+        // (where it's steeper than snow lies, some sliding down, to where
+        // there's room for it: a slope of 1 in 7 or so)
+        const steepest = column * 0.15
+        for (let j = 0; j < n - 1; j++) {
+            const drop = (p[j] - base[j]) - (p[j + 1] - base[j + 1])
+            if (Math.abs(drop) <= steepest) continue
+            const want = (Math.abs(drop) - steepest) / 2
+            const room = drop > 0 ? caps[j + 1] - p[j + 1] : caps[j] - p[j]
+            const moved = Math.sign(drop) * Math.min(want, Math.max(0, room))
+            p[j] -= moved
+            p[j + 1] += moved
+        }
+        for (let pass = 0; pass < 4; pass++) {
+            for (let j = 0; j < n; j++) {
+                const extra = p[j] - caps[j]
+                if (extra <= 0) continue
+                p[j] = caps[j]
+                // (to either side, or, at the ends, all back in along it)
+                if (j === 0) p[1] += extra
+                else if (j === n - 1) p[n - 2] += extra
+                else { p[j - 1] += extra / 2; p[j + 1] += extra / 2 }
+            }
+        }
+        // (and what's still over after that, gone: blown off)
+        let moved = 0
+        for (let j = 0; j < n; j++) {
+            p[j] = Math.max(0, Math.min(caps[j], p[j]))
+            moved = Math.max(moved, Math.abs(p[j] - before[j]))
         }
         if (moved > 0.005) ledge.changed = true
     }
