@@ -35,7 +35,7 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
 
     // Everyone opens theirs, each on their own phone
     const receivers = new Map<string, string>()
-    for (const name of ['Mum', 'Dad', 'Sue', 'Gran']) {
+    for (const name of ['Mum', 'Dad', 'Bill', 'Gran']) {
         const opened = await openName(browser, groupId, name)
         receivers.set(name, opened.receiver)
         expect(opened.errors).toEqual([])
@@ -44,7 +44,7 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
         await expect(opened.page.locator('.slip-name')).toHaveText(opened.receiver)
         await opened.context.close()
     }
-    expect([...receivers.values()].sort()).toEqual(['Dad', 'Gran', 'Mum', 'Sue'])
+    expect([...receivers.values()].sort()).toEqual(['Bill', 'Dad', 'Gran', 'Mum'])
     for (const [giver, receiver] of receivers) expect(receiver).not.toBe(giver)
     expect(receivers.get('Mum')).not.toBe('Dad')
     expect(receivers.get('Dad')).not.toBe('Mum')

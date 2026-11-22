@@ -60,7 +60,7 @@ function SignIn({group, onSignedIn}: {group: Group, onSignedIn: (token: string) 
     return (
         <Page title={group.name}>
             <h1>{group.name}</h1>
-            <form className="card stack" onSubmit={submit}>
+            <form className="card card-gold stack" onSubmit={submit}>
                 <label className="field">
                     <span className="label">Organiser password</span>
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" autoFocus />
@@ -108,17 +108,17 @@ function Organiser(props: SectionProps) {
     }
 
     return (
-        <Page title={`${group.name} (organiser)`} wide>
+        <Page title={`${group.name}`} wide>
             <header className="group-head">
                 <p className="eyebrow">Organiser</p>
                 <GroupName {...props} />
             </header>
 
-            <section className="card stack">
+            <section className="card card-gold stack">
                 <h2>Send everyone this link</h2>
                 <CopyLink url={link} />
                 <p className="hint">
-                    Anyone with the link can open a name, so send it to the only the people taking part.
+                    Anyone with the link can open a name, so only send it to the people taking part.
                 </p>
             </section>
 
@@ -181,8 +181,8 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
     }
 
     return (
-        <section className="card stack">
-            <h2>Names in the hat</h2>
+        <section className="card card-green stack">
+            <h2>People</h2>
             {active.length === 0 && <p className="muted">Nobody yet.</p>}
             <ul className="people">
                 {active.map(person => (
@@ -215,7 +215,7 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
                 if (await act(() => client.addPerson(name))) setName('')
             }}>
                 <input value={name} onChange={e => setName(e.target.value)} maxLength={limits.personName} required
-                    placeholder="Another name" aria-label="Name to add" />
+                    placeholder="Marvin" aria-label="Name to add" />
                 <button type="submit" className="button" disabled={busy}>Add</button>
             </form>
             <ErrorNote message={error} />
@@ -247,7 +247,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
     const save = (changes: Partial<Rules>) => act(() => client.saveRules({...rules, ...changes}))
 
     return (
-        <section className="card stack">
+        <section className="card card-ice stack">
             <h2>Rules</h2>
 
             <div className="field">
@@ -302,7 +302,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
                 <input type="checkbox" checked={rules.noSwaps} disabled={busy} onChange={e => save({noSwaps: e.target.checked})} />
                 <span>
                     <span className="label">No swaps</span>
-                    <span className="hint">If Tim buys for John, John doesn't buy for Tim.</span>
+                    <span className="hint">If Arthur buys for Ford, Ford doesn't buy for Arthur.</span>
                 </span>
             </label>
 
@@ -344,13 +344,13 @@ function Draws(props: SectionProps) {
     }
 
     return (
-        <section className="stack">
+        <section className="stack draws">
             <div className="title-row">
                 <h2>Draws</h2>
                 {!creating && <button type="button" className="button" onClick={startCreating}>New draw</button>}
             </div>
             {creating && (
-                <form className="card stack" onSubmit={async event => {
+                <form className="card card-violet stack" onSubmit={async event => {
                     event.preventDefault()
                     const created = await act(() => client.createDraw({
                         name,
@@ -384,7 +384,7 @@ function Draws(props: SectionProps) {
 function Participants({people, chosen, onChange, disabled = false}: {people: Person[], chosen: Set<string>, onChange: (chosen: Set<string>) => void, disabled?: boolean}) {
     return (
         <fieldset className="field">
-            <legend className="label">Who's in it</legend>
+            <legend className="label">Who's involved</legend>
             <div className="checks">
                 {people.map(person => (
                     <label key={person.id} className="chip-check">
