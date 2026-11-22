@@ -4,6 +4,9 @@ import {Link} from './Link.tsx'
 import {startSnow} from '../snow.ts'
 import './Page.css'
 
+// (this year, as the page loaded)
+const year = new Date().getFullYear()
+
 // Every page: the candy-stripe ribbon across the top, the content in a
 // column, and a small footer (its name, and the copyright), with snow falling behind it all and
 // gathering on the footer's divider (snow.ts).
@@ -26,7 +29,7 @@ export function Page({title, children, wide = false}: {title?: string, children:
                     Secret Santa
                 </Link>
                 <p className="copyright">
-                    © {new Date().getFullYear()} <a href="https://blakeslee.uk">Stephan Blakeslee</a>
+                    © {year} <a href="https://blakeslee.uk">Stephan Blakeslee</a>
                 </p>
             </footer>
         </div>
