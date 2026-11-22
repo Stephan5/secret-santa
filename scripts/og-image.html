@@ -152,12 +152,10 @@
         context.arc(x, y, r, 0, Math.PI * 2)
         context.fill()
     }
-    for (let i = 0; i < 650; i++) {
-        const r = 1.2 + random() ** 1.7 * 5
-        flake(r, 0.45 + (r / 6.2) * 0.5)
+    for (let i = 0; i < 420; i++) {
+        const r = 1 + random() ** 2 * 3.8
+        flake(r, 0.45 + (r / 4.8) * 0.5)
     }
-    // and a few big, soft ones, right up close
-    for (let i = 0; i < 24; i++) flake(8 + random() * 7, 0.22 + random() * 0.18)
 
     // settled: a gently lumpy drift along the bottom
     const points = []
