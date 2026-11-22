@@ -3,10 +3,12 @@
 // ledge: any `canvas.snowdrift` in the page, sat on top of something (the
 // footer's divider; on home, the steps' numbers and the start button). How
 // much each holds is kept here by its `data-ledge` name, not in the page,
-// so it carries on building from page to page. `data-taper` is how far in
-// from each end, in CSS pixels, it thins out to nothing (where the snow'd
-// slide off a rounded end). With reduced motion asked for: a still scatter
-// of flakes, and the snow already settled.
+// so it carries on building from page to page. `data-depth` is how deep, in
+// CSS pixels, it can get. The snow lies along the top of what the ledge is
+// on, round its corners as they curve away (so the canvas is sized and
+// placed here, reaching down over them), thinning out to nothing where it
+// would slide off. With reduced motion asked for: a still scatter of
+// flakes, and the snow already settled.
 
 type Flake = {x: number, y: number, r: number, vy: number, swayAmp: number, swayFreq: number, phase: number, alpha: number}
 
@@ -16,6 +18,8 @@ type Ledge = {
     name: string
     width: number
     height: number
+    // (the top of what it's on, down from the canvas's top, at each column)
+    base: number[]
     caps: number[]
     changed: boolean
 }
@@ -77,7 +81,7 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
             if (kept.some(ledge => ledge.canvas === canvas)) continue
             const context = canvas.getContext('2d')
             if (!context) continue
-            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, caps: [], changed: true}
+            const ledge: Ledge = {canvas, context, name: canvas.dataset.ledge ?? 'ledge', width: 0, height: 0, base: [], caps: [], changed: true}
             size(ledge)
             observer.observe(canvas)
             kept.push(ledge)
@@ -85,18 +89,38 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
         ledges = kept
     }
 
-    // A ledge's size, and so how much snow it can hold where
+    // A ledge's size and shape, and so how much snow it can hold where
     function size(ledge: Ledge) {
-        const box = ledge.canvas.getBoundingClientRect()
-        // (its own size, before any turn it's given: offsetWidth and so on)
-        ledge.width = ledge.canvas.offsetWidth || box.width
-        ledge.height = ledge.canvas.offsetHeight || box.height
-        ledge.canvas.width = Math.round(ledge.width * ratio)
-        ledge.canvas.height = Math.round(ledge.height * ratio)
+        const {canvas} = ledge
+        const on = canvas.parentElement!
+        // (sizes before any turn it's given: offsetWidth and so on)
+        const width = on.offsetWidth
+        const corner = Math.min(parseFloat(getComputedStyle(on).borderTopLeftRadius) || 0, on.offsetHeight / 2, width / 2)
+        const depth = Number(canvas.dataset.depth ?? 12)
+        canvas.style.left = '0'
+        canvas.style.width = `${width}px`
+        canvas.style.height = `${depth + corner}px`
+        canvas.style.bottom = `calc(100% - ${corner}px)`
+        ledge.width = width
+        ledge.height = depth + corner
+        canvas.width = Math.round(ledge.width * ratio)
+        canvas.height = Math.round(ledge.height * ratio)
         ledge.context.setTransform(ratio, 0, 0, ratio, 0, 0)
 
         const columns = Math.max(2, Math.ceil(ledge.width / column) + 1)
-        ledge.caps = capsFor(columns, ledge.height, Number(ledge.canvas.dataset.taper ?? 36))
+        ledge.base = []
+        for (let i = 0; i < columns; i++) {
+            const x = Math.min(i * column, width)
+            const fromEnd = Math.min(x, width - x)
+            const drop = fromEnd < corner ? corner - Math.sqrt(corner ** 2 - (corner - fromEnd) ** 2) : 0
+            ledge.base[i] = depth + drop
+        }
+        // (and none holds where what it's on is steeper than 45 degrees,
+        // less the steeper it gets on the way)
+        ledge.caps = capsFor(columns, depth, Number(canvas.dataset.taper ?? 0)).map((cap, i) => {
+            const slope = Math.abs(ledge.base[Math.min(columns - 1, i + 1)] - ledge.base[Math.max(0, i - 1)]) / (2 * column)
+            return cap * Math.max(0, 1 - slope) ** 2
+        })
         let pile = piles.get(ledge.name)
         // (resampled from what had gathered at the old width, or, the first
         // time, a dusting to start from)
@@ -133,26 +157,30 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
 
     function drawLedge(ledge: Ledge) {
         const p = piles.get(ledge.name)!
+        const {base} = ledge
         const c = ledge.context
         const {width: w, height: h} = ledge
+        const x = (i: number) => Math.min(i * column, w)
         c.clearRect(0, 0, w, h)
         c.beginPath()
-        c.moveTo(0, h)
-        c.lineTo(0, h - p[0])
+        // along the top of the snow...
+        c.moveTo(0, base[0] - p[0])
         for (let i = 1; i < p.length; i++) {
-            const x0 = (i - 1) * column
-            const x1 = i * column
-            c.quadraticCurveTo(x0, h - p[i - 1], (x0 + x1) / 2, h - (p[i - 1] + p[i]) / 2)
+            const midX = (x(i - 1) + x(i)) / 2
+            const midY = (base[i - 1] - p[i - 1] + base[i] - p[i]) / 2
+            c.quadraticCurveTo(x(i - 1), base[i - 1] - p[i - 1], midX, midY)
         }
-        c.lineTo(w, h - p[p.length - 1])
-        c.lineTo(w, h)
+        c.lineTo(w, base[p.length - 1] - p[p.length - 1])
+        // ...and back along what it's lying on
+        for (let i = p.length - 1; i >= 0; i--) c.lineTo(x(i), base[i])
         c.closePath()
         const shade = c.createLinearGradient(0, 0, 0, h)
         shade.addColorStop(0, '#ffffff')
         shade.addColorStop(1, '#c9d4ea')
         c.fillStyle = shade
         c.shadowColor = 'rgb(200 220 255 / 0.45)'
-        c.shadowBlur = 6
+        // (a glow, less on a small ledge, so it doesn't spill off the ends)
+        c.shadowBlur = Math.min(6, 1 + Math.max(...p) / 2)
         c.fill()
         c.shadowBlur = 0
         ledge.changed = false
@@ -199,8 +227,9 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
                 const ledge = ledges[k]
                 const p = piles.get(ledge.name)!
                 const i = Math.min(p.length - 1, Math.floor(((flake.x - box.left) / box.width) * ledge.width / column))
-                const surface = box.bottom - p[i]
-                if (flake.y >= surface && flake.y <= box.bottom + 6) {
+                const scale = box.height / ledge.height
+                const under = box.top + ledge.base[i] * scale
+                if (flake.y >= under - p[i] * scale && flake.y <= under + 6) {
                     deposit(ledge, i, flake.r)
                     flakes[n] = newFlake(false)
                     continue flakes
