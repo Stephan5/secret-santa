@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Stephan5/secret-santa/actions/workflows/ci.yml/badge.svg)](https://github.com/Stephan5/secret-santa/actions/workflows/ci.yml)
 
-Secret Santa, without the hat. Put everyone's names in, draw them all at once, and send one link: each person picks their name and sees who they're buying for, on their own phone, wherever they are.
+Secret Santa, sorted. Put everyone's names in, draw them all at once, and send one link: each person picks their name and sees who they're buying for, on their own phone, wherever they are.
 
 [santa.blakeslee.uk](https://santa.blakeslee.uk)
 
