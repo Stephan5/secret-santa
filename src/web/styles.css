@@ -244,7 +244,7 @@ a {
     background: var(--surface);
     border: 2px solid var(--entry);
     border-radius: var(--radius);
-    padding: 1.25rem;
+    padding: 2rem;
     box-shadow:
         0 0 1.5rem color-mix(in srgb, var(--entry) 22%, transparent),
         0 1rem 2rem var(--shadow);

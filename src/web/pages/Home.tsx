@@ -6,9 +6,9 @@ export function Home() {
     return (
         <Page>
             <section className="hero">
-                <h1>Secret Santa, without the hat.</h1>
+                <h1>Secret Santa, without the hat</h1>
                 <p className="lede">
-                    Enter everyone's names, draw them in one go, and send out the link.
+                    Enter everyone's names, draw them all in one go, and then send out the link.
                     An easy way to fairly sort out secret santa, with minimal peeking.
                 </p>
                 <Link href={paths.create} className="button button-primary button-large snowy">
@@ -20,8 +20,8 @@ export function Home() {
             <ol className="steps">
                 <li>
                     <StepKey n={1} />
-                    <h2>Put the names in the hat</h2>
-                    <p>Add rules: couples who shouldn't draw each other, nobody gets who they drew last year.</p>
+                    <h2>Put in the names</h2>
+                    <p>Add rules: couples who shouldn't draw each other, nobody gets the same person as last year.</p>
                 </li>
                 <li>
                     <StepKey n={2} />

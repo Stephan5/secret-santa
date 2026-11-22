@@ -108,7 +108,7 @@ function Organiser(props: SectionProps) {
     }
 
     return (
-        <Page title={`${group.name} (organiser)`} wide>
+        <Page title={`${group.name}`} wide>
             <header className="group-head">
                 <p className="eyebrow">Organiser</p>
                 <GroupName {...props} />
@@ -182,7 +182,7 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
 
     return (
         <section className="card card-green stack">
-            <h2>Names in the hat</h2>
+            <h2>People</h2>
             {active.length === 0 && <p className="muted">Nobody yet.</p>}
             <ul className="people">
                 {active.map(person => (
@@ -302,7 +302,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
                 <input type="checkbox" checked={rules.noSwaps} disabled={busy} onChange={e => save({noSwaps: e.target.checked})} />
                 <span>
                     <span className="label">No swaps</span>
-                    <span className="hint">If Tim buys for John, John doesn't buy for Tim.</span>
+                    <span className="hint">If Arthur buys for Ford, Ford doesn't buy for Arthur.</span>
                 </span>
             </label>
 
