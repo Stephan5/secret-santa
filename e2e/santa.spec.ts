@@ -99,13 +99,13 @@ test("a shared device can open more than one name", async ({page, request}) => {
     expect(errors).toEqual([])
 })
 
-test('everyone sees who had whom from the results date', async ({page, request}) => {
+test('everyone sees the full draw results from the results date', async ({page, request}) => {
     const {group} = await makeDrawnGroup(request, ['Mum', 'Dad', 'Sue'], '2020-12-25T12:00:00Z')
     const errors = trackErrors(page)
     await page.goto(`/g/${group.id}`)
     const pairings = page.locator('.pairings li')
     await expect(pairings).toHaveCount(3)
-    await expect(page.getByRole('heading', {name: 'Who had whom'})).toBeVisible()
+    await expect(page.getByRole('heading', {name: 'Full draw results'})).toBeVisible()
     expect(errors).toEqual([])
 })
 

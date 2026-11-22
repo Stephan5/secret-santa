@@ -430,7 +430,7 @@ const boxingDay = `${new Date().getFullYear()}-12-26T12:00`
 function VisibleFrom({value, onChange}: {value: string, onChange: (value: string) => void}) {
     return (
         <label className="field">
-            <span className="label">Show everyone who had whom from</span>
+            <span className="label">Show everyone the full draw results from</span>
             <span className="hint">Leave it empty to keep it secret for good.</span>
             <span className="inline-form">
                 <input type="datetime-local" value={value} onChange={e => onChange(e.target.value)} />
@@ -528,7 +528,7 @@ function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionPro
             )}
             {draw.resultsVisibleFrom && !visibleChanged && (
                 <p className="hint">
-                    {draw.results ? 'Everyone can see who had whom now.' : `Everyone will see who had whom from ${formatWhen(draw.resultsVisibleFrom)}.`}
+                    {draw.results ? 'Everyone can see the full draw results now.' : `Everyone will see the full draw results from ${formatWhen(draw.resultsVisibleFrom)}.`}
                 </p>
             )}
             <ErrorNote message={error} />

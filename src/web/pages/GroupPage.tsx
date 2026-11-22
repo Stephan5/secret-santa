@@ -25,7 +25,10 @@ export function GroupPage({groupId}: {groupId: string}) {
     if (failure) return <Page><ErrorNote message={failure.message} /></Page>
     if (!group) return <Page><Loading /></Page>
 
-    const [current, ...earlier] = group.draws
+    const [current, ...before] = group.draws
+    // (of those before it, only the ones that were drawn: one never drawn
+    // has nothing in it for anyone)
+    const earlier = before.filter(draw => draw.status === 'drawn')
     const nameOf = (id: string) => group.people.find(p => p.id === id)?.name ?? 'Someone'
 
     return (
@@ -44,10 +47,7 @@ export function GroupPage({groupId}: {groupId: string}) {
                     {/* (green and violet in turn, counting from the first draw,
                          so each keeps its colour as more are made) */}
                     {earlier.map((draw, i) => (
-                        <details key={draw.id} className={(earlier.length - 1 - i) % 2 === 0 ? 'card card-green' : 'card card-violet'}>
-                            <summary><Snowdrift ledge={`draw-${draw.id}`} />{draw.name}{draw.drawnAt && <span className="muted"> · drawn {formatDay(draw.drawnAt)}</span>}</summary>
-                            <Results draw={draw} nameOf={nameOf} />
-                        </details>
+                        <EarlierDraw key={draw.id} draw={draw} nameOf={nameOf} colour={(earlier.length - 1 - i) % 2 === 0 ? 'card-green' : 'card-violet'} />
                     ))}
                 </section>
             )}
@@ -192,16 +192,8 @@ function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
     if (draw.results) {
         return (
             <section className="results">
-                <h2>Who had whom</h2>
-                <ul className="pairings">
-                    {draw.results.map(({giverId, receiverId}) => (
-                        <li key={giverId}>
-                            <span className="pair-name">{nameOf(giverId)}</span>
-                            <PairArrow />
-                            <span className="pair-name">{nameOf(receiverId)}</span>
-                        </li>
-                    ))}
-                </ul>
+                <h2>Full draw results</h2>
+                <Pairings draw={draw} nameOf={nameOf} />
             </section>
         )
     }
@@ -209,6 +201,44 @@ function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
         return <p className="muted results-later">Everyone's pairings will be shown here from {formatWhen(draw.resultsVisibleFrom)}.</p>
     }
     return null
+}
+
+function Pairings({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
+    return (
+        <ul className="pairings">
+            {draw.results?.map(({giverId, receiverId}) => (
+                <li key={giverId}>
+                    <span className="pair-name">{nameOf(giverId)}</span>
+                    <PairArrow />
+                    <span className="pair-name">{nameOf(receiverId)}</span>
+                </li>
+            ))}
+        </ul>
+    )
+}
+
+// An earlier draw, small: what it was called, when it was drawn, and its
+// full results, folded away, once they're shown; or, till then, when they
+// will be, or that they won't.
+function EarlierDraw({draw, nameOf, colour}: {draw: Draw, nameOf: (id: string) => string, colour: string}) {
+    const drawn = draw.drawnAt ? `Drawn ${formatDay(draw.drawnAt)}.` : 'Drawn.'
+    return (
+        <section className={`card ${colour} earlier-draw`}>
+            <Snowdrift ledge={`draw-${draw.id}`} />
+            <h3>{draw.name}</h3>
+            {draw.results && (
+                <>
+                    <p className="muted">{drawn}</p>
+                    <details>
+                        <summary>Full draw results</summary>
+                        <Pairings draw={draw} nameOf={nameOf} />
+                    </details>
+                </>
+            )}
+            {!draw.results && draw.resultsVisibleFrom && <p className="muted">{drawn} The full draw results will be shown here from {formatWhen(draw.resultsVisibleFrom)}.</p>}
+            {!draw.results && !draw.resultsVisibleFrom && <p className="muted">{drawn} The full draw results are being kept secret.</p>}
+        </section>
+    )
 }
 
 // The arrow between who bought and who they bought for: chunky and rounded,

@@ -216,13 +216,38 @@ main.column {
     font-size: 1.2rem;
 }
 
-/* (over the list of who had whom, which is centred) */
+/* (over the full draw results, which are centred) */
 .results h2 {
     text-align: center;
 }
 
 .results-later {
     text-align: center;
+}
+
+/* (an earlier draw: smaller than the screen for this year's, with room
+   between them for the snow on each) */
+.earlier {
+    gap: 1rem;
+}
+
+.card.earlier-draw {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.earlier-draw h3 {
+    font-size: 1.2rem;
+}
+
+.earlier-draw details {
+    margin-top: 0.4rem;
+}
+
+.earlier-draw summary {
+    color: var(--entry);
 }
 
 .pairings {
