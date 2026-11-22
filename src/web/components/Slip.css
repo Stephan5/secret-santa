@@ -9,7 +9,7 @@
     width: 100%;
     max-width: 23rem;
     margin: 0.5rem auto 1.5rem;
-    padding: 2.25rem 1.25rem 3rem;
+    padding: 2.5rem 1.5rem 3.75rem;
     /* (a column, so the space under who it's for and the room above the
        sheet don't collapse into one) */
     display: flex;
@@ -135,7 +135,7 @@ main .slip.card[role="status"] {
 
 /* Who it's for, above the sheet */
 p.slip-for {
-    margin: 0 0 2rem;
+    margin: 0 0 1.1rem;
     font-family: var(--mono);
     font-size: 0.9rem;
     letter-spacing: 0.02em;
@@ -156,7 +156,7 @@ p.slip-for {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* in pen: Caveat (OFL), in blue-black ink */
+    /* in pen: Caveat (OFL), in black ink */
     font-family: var(--hand);
     font-weight: 700;
     line-height: 1;

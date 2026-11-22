@@ -2,8 +2,8 @@
    and cranberry, snow falling and settling on the footer; black
    screens for cards, edged in tinsel colours; large, friendly letters
    (Baloo 2, OFL) for headings and a screen's type (Space Mono, OFL) for
-   the small print. The name drawn is handwritten (Caveat, OFL) on the
-   back of folded wrapping paper (Slip.css).
+   the small print. The name drawn is handwritten (Caveat, OFL), in
+   black, on the back of folded wrapping paper (Slip.css).
    Always dark: it's night. */
 
 @font-face {
@@ -86,7 +86,7 @@
     --paper-ink: #2a201b;
     --paper-muted: #6d6057;
     --paper-red: #b0222f;
-    --paper-pen: #22306b;
+    --paper-pen: #1c1a19;
     --crease: rgb(120 90 50 / 0.18);
 
     --radius: 0.75rem;
