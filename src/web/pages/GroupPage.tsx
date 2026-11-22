@@ -7,6 +7,7 @@ import {deviceToken, forgetReveal, rememberReveal, revealedHere} from '../device
 import {formatDay, formatWhen} from '../format.ts'
 import {paths} from '../router.ts'
 import {Link} from '../components/Link.tsx'
+import {Snowdrift} from '../components/Snowdrift.tsx'
 import {NotFound} from './Home.tsx'
 
 // The page everyone's sent: pick your name, see who you're buying for.
@@ -34,15 +35,17 @@ export function GroupPage({groupId}: {groupId: string}) {
                 {current && <p className="lede">{current.name}</p>}
             </header>
 
-            {!current && <p className="card card-gold">Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
+            {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
             {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} nameOf={nameOf} />}
 
             {earlier.length > 0 && (
                 <section className="earlier">
                     <h2>Earlier draws</h2>
-                    {earlier.map(draw => (
-                        <details key={draw.id} className="card">
-                            <summary>{draw.name}{draw.drawnAt && <span className="muted"> · drawn {formatDay(draw.drawnAt)}</span>}</summary>
+                    {/* (green and violet in turn, counting from the first draw,
+                         so each keeps its colour as more are made) */}
+                    {earlier.map((draw, i) => (
+                        <details key={draw.id} className={(earlier.length - 1 - i) % 2 === 0 ? 'card card-green' : 'card card-violet'}>
+                            <summary><Snowdrift ledge={`draw-${draw.id}`} />{draw.name}{draw.drawnAt && <span className="muted"> · drawn {formatDay(draw.drawnAt)}</span>}</summary>
                             <Results draw={draw} nameOf={nameOf} />
                         </details>
                     ))}
@@ -60,6 +63,7 @@ function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Dra
     if (draw.status === 'pending') {
         return (
             <section className="card card-gold">
+                <Snowdrift ledge="not-drawn" />
                 <p>Names haven't been drawn yet. Check back once the organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
             </section>
@@ -143,6 +147,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
     const person = people.find(p => p.id === chosen)
     return (
         <section className="card card-red reveal-picker">
+            <Snowdrift ledge="reveal" />
             {!confirming && (
                 <form className="stack" onSubmit={event => { event.preventDefault(); if (person) setConfirming(true) }}>
                     <label className="field">

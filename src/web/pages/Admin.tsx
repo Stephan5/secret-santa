@@ -7,6 +7,8 @@ import {ErrorNote, Loading, Page} from '../components/Page.tsx'
 import {formatDay, formatWhen, fromLocalInput, listOf, plural, toLocalInput} from '../format.ts'
 import {navigate, paths} from '../router.ts'
 import {Link} from '../components/Link.tsx'
+import {Snowdrift} from '../components/Snowdrift.tsx'
+import {moveSnow} from '../snow.ts'
 import {NotFound} from './Home.tsx'
 
 // The organiser's page: the names in the hat, the rules, and the draws.
@@ -61,6 +63,7 @@ function SignIn({group, onSignedIn}: {group: Group, onSignedIn: (token: string) 
         <Page title={group.name}>
             <h1>{group.name}</h1>
             <form className="card card-gold stack" onSubmit={submit}>
+                <Snowdrift ledge="sign-in" />
                 <label className="field">
                     <span className="label">Organiser password</span>
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" autoFocus />
@@ -115,6 +118,7 @@ function Organiser(props: SectionProps) {
             </header>
 
             <section className="card card-gold stack">
+                <Snowdrift ledge="share-link" />
                 <h2>Send everyone this link</h2>
                 <CopyLink url={link} />
                 <p className="hint">
@@ -182,6 +186,7 @@ function People({group, setGroup, client, signedOut}: SectionProps) {
 
     return (
         <section className="card card-green stack">
+            <Snowdrift ledge="names" />
             <h2>Names in the hat</h2>
             {active.length === 0 && <p className="muted">Nobody yet.</p>}
             <ul className="people">
@@ -248,6 +253,7 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
 
     return (
         <section className="card card-ice stack">
+            <Snowdrift ledge="rules" />
             <h2>Rules</h2>
 
             <div className="field">
@@ -350,15 +356,22 @@ function Draws(props: SectionProps) {
                 {!creating && <button type="button" className="button" onClick={startCreating}>New draw</button>}
             </div>
             {creating && (
-                <form className="card card-violet stack" onSubmit={async event => {
+                <form className={`card ${drawColour(group.draws.length)} stack`} onSubmit={async event => {
                     event.preventDefault()
-                    const created = await act(() => client.createDraw({
-                        name,
-                        participantIds: active.filter(p => chosen.has(p.id)).map(p => p.id),
-                        resultsVisibleFrom: fromLocalInput(visibleFrom),
-                    }))
+                    const created = await act(async () => {
+                        const next = await client.createDraw({
+                            name,
+                            participantIds: active.filter(p => chosen.has(p.id)).map(p => p.id),
+                            resultsVisibleFrom: fromLocalInput(visibleFrom),
+                        })
+                        // (the snow on the form staying on the draw it's become)
+                        const made = next.draws.find(draw => !group.draws.some(old => old.id === draw.id))
+                        if (made) moveSnow('new-draw', `draw-${made.id}`)
+                        return next
+                    })
                     if (created) setCreating(false)
                 }}>
+                    <Snowdrift ledge="new-draw" />
                     <h3>New draw</h3>
                     <label className="field">
                         <span className="label">Name</span>
@@ -374,11 +387,18 @@ function Draws(props: SectionProps) {
                 </form>
             )}
             {/* (keyed on what its form holds, so it starts afresh when that changes underneath it) */}
-            {group.draws.map(draw => (
-                <DrawCard key={`${draw.id} ${draw.status} ${draw.participantIds.join()} ${draw.resultsVisibleFrom}`} {...props} draw={draw} />
+            {group.draws.map((draw, i) => (
+                <DrawCard key={`${draw.id} ${draw.status} ${draw.participantIds.join()} ${draw.resultsVisibleFrom}`} {...props} draw={draw} colour={drawColour(group.draws.length - 1 - i)} />
             ))}
         </section>
     )
+}
+
+// A draw's screen's colour, by how many came before it (they're listed
+// newest first): violet and red in turn, so it's the same while it's being
+// made as once it has been, and doesn't change as more are added
+function drawColour(before: number) {
+    return before % 2 === 0 ? 'card-violet' : 'card-red'
 }
 
 function Participants({people, chosen, onChange, disabled = false}: {people: Person[], chosen: Set<string>, onChange: (chosen: Set<string>) => void, disabled?: boolean}) {
@@ -420,7 +440,7 @@ function VisibleFrom({value, onChange}: {value: string, onChange: (value: string
     )
 }
 
-function DrawCard({group, setGroup, client, signedOut, draw}: SectionProps & {draw: Draw}) {
+function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionProps & {draw: Draw, colour: string}) {
     const {act, busy, error} = useAction(setGroup, signedOut)
     const [chosen, setChosen] = useState(() => new Set(draw.participantIds))
     const [visibleFrom, setVisibleFrom] = useState(() => toLocalInput(draw.resultsVisibleFrom))
@@ -434,7 +454,8 @@ function DrawCard({group, setGroup, client, signedOut, draw}: SectionProps & {dr
     const visibleChanged = fromLocalInput(visibleFrom) !== draw.resultsVisibleFrom
 
     return (
-        <article className="card stack draw-card">
+        <article className={`card ${colour} stack draw-card`}>
+            <Snowdrift ledge={`draw-${draw.id}`} />
             <header className="title-row">
                 <h3>{draw.name}</h3>
                 <span className={pending ? 'badge' : 'badge badge-drawn'}>

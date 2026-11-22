@@ -1,4 +1,5 @@
 import {Doodle} from './Doodle.tsx'
+import {Snowdrift} from './Snowdrift.tsx'
 import './Slip.css'
 
 // The name drawn, written on the back of a sheet of wrapping paper folded
@@ -18,6 +19,7 @@ export function Slip({forName, receiverName, unfold}: {forName: string, receiver
     const size = {fontSize: `${nameSize(receiverName)}rem`}
     return (
         <div className={unfold ? 'card card-red slip slip-unfold' : 'card card-red slip'} role="status" aria-live="polite">
+            <Snowdrift ledge="reveal" />
             <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheet">
                 <div className="slip-half slip-lower">

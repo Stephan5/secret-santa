@@ -80,6 +80,15 @@ type Ledge = {
 const column = 3
 const piles = new Map<string, number[]>()
 
+// The snow gathered on one ledge, moved to another (as when what it was on
+// becomes something else), leaving the first bare.
+export function moveSnow(from: string, to: string) {
+    const pile = piles.get(from)
+    if (!pile) return
+    piles.set(to, pile.slice())
+    piles.set(from, pile.map(() => 0))
+}
+
 export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => void {
     const fallContext = fall.getContext('2d')
     if (!fallContext) return () => {}
@@ -143,7 +152,8 @@ export function startSnow(fall: HTMLCanvasElement, root: HTMLElement): () => voi
     // A ledge's size and shape, and so how much snow it can hold where
     function size(ledge: Ledge) {
         const {canvas} = ledge
-        const on = canvas.parentElement!
+        // (what it's placed against: the nearest positioned thing it's in)
+        const on = (canvas.offsetParent as HTMLElement | null) ?? canvas.parentElement!
         // (sizes before any turn it's given: offsetWidth and so on)
         const width = on.offsetWidth
         const corner = Math.min(parseFloat(getComputedStyle(on).borderTopLeftRadius) || 0, on.offsetHeight / 2, width / 2)

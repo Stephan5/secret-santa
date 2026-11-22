@@ -244,7 +244,8 @@ a {
    faintly. Each says which colour it is (card-gold and so on), so that
    none on a page is next to one the same. */
 .card {
-    --entry: var(--tinsel-ice);
+    --entry: var(--tinsel-violet);
+    position: relative;
     background: var(--surface);
     border: 2px solid var(--entry);
     border-radius: var(--radius);
@@ -260,16 +261,17 @@ a {
 .card-ice { --entry: var(--tinsel-ice); }
 .card-violet { --entry: var(--tinsel-violet); }
 
-/* (a list of them takes two in turn: the draws on the organiser's page,
-   earlier draws on everyone's) */
-.draws > .draw-card:nth-of-type(odd) { --entry: var(--tinsel-red); }
-.draws > .draw-card:nth-of-type(even) { --entry: var(--tinsel-violet); }
-.earlier > .card:nth-of-type(odd) { --entry: var(--tinsel-green); }
-.earlier > .card:nth-of-type(even) { --entry: var(--tinsel-violet); }
-
 .card h2,
 .card h3 {
     color: var(--entry);
+}
+
+/* (snow settling on a screen's top edge: Snowdrift.tsx, snow.ts) */
+.card .snowdrift {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    pointer-events: none;
 }
 
 /* Forms */
@@ -296,7 +298,7 @@ legend.label,
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--tinsel-ice);
+    color: var(--tinsel-violet);
 }
 
 /* (a fieldset's legend sits outside its flex layout, so it doesn't get
