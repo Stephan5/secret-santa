@@ -1,46 +1,88 @@
-/* The name drawn, on a gift tag: card, its top corners clipped, hung on a
-   gold string through a gold-rimmed hole, swinging in when it's first
-   shown and settling. */
+/* The name drawn, on the back of a sheet of wrapping paper folded in half
+   (Slip.tsx): its patterned side out (wrapping-paper.svg), its plain,
+   gridded back in. The top half (the flap) lies folded down over the
+   bottom, then lifts and swings up, opening it out. */
 .slip {
-    position: relative;
     margin: 1rem auto 1.5rem;
-    width: min(100%, 20rem);
-    padding-top: 3.25rem;
-    /* (the tag's shadow, which a clipped box can't cast itself) */
-    filter: drop-shadow(0 0.1rem 0 var(--paper-edge)) drop-shadow(0 0.9rem 1.5rem rgb(0 0 0 / 0.55));
+    width: min(100%, 22rem);
+    rotate: -1.5deg;
+    filter: drop-shadow(0 0.9rem 1.4rem rgb(0 0 0 / 0.55));
 }
 
-/* the string, from out of sight down to the hole */
-.slip::before {
-    content: '';
-    position: absolute;
-    left: calc(50% - 1px);
-    top: 0;
-    width: 2px;
-    height: 4.85rem;
-    background: linear-gradient(var(--tinsel-gold), #c9962e);
-    border-radius: 1px;
-    z-index: 1;
-}
-
-.slip-paper {
-    --hole: 1.6rem;
+/* (the sheet's height is the bottom half's, with room above it for the
+   flap to open into) */
+.slip-sheet {
     position: relative;
-    padding: 3.4rem 1.5rem 2.25rem;
+    margin-top: 5.75rem;
+    perspective: 32rem;
+}
+
+/* the back of the paper: off-white, with the faint grid printed for
+   cutting it straight */
+.slip-half {
+    --grid: rgb(70 110 170 / 0.12);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1.25rem;
+    min-height: 5.75rem;
     text-align: center;
     color: var(--paper-ink);
     background:
-        /* the hole's gold rim */
-        radial-gradient(circle at 50% var(--hole), transparent 0.5rem, var(--tinsel-gold) 0.5rem 0.72rem, transparent 0.75rem),
-        /* a line ruled across, under the name */
-        linear-gradient(to top, transparent 1.6rem, var(--crease) 1.6rem 1.7rem, transparent 1.7rem),
-        linear-gradient(170deg, var(--paper-light), var(--paper));
-    clip-path: polygon(3.25rem 0, calc(100% - 3.25rem) 0, 100% 3.25rem, 100% 100%, 0 100%, 0 3.25rem);
-    /* (the hole itself, through to the sky) */
-    mask: radial-gradient(circle at 50% var(--hole), transparent 0.5rem, #000 0.52rem);
-    border-radius: 0 0 0.35rem 0.35rem;
-    transform-origin: 50% var(--hole);
-    rotate: -2deg;
+        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        #fbf8f1;
+}
+
+/* (the bottom half, its top edge the fold, shaded a little into it) */
+.slip-lower {
+    justify-content: flex-start;
+    padding-top: 0.5rem;
+    padding-bottom: 1.5rem;
+    background:
+        linear-gradient(rgb(0 0 0 / 0.08), transparent 0.6rem),
+        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        #f6f1e6;
+    border-radius: 0 0 0.2rem 0.2rem;
+}
+
+/* The flap: the top half, hinged on the fold at its bottom edge; its inside
+   (the top of what's written) one face, the pattern the other. */
+.slip-flap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -5.75rem;
+    height: 5.75rem;
+    transform-origin: 50% 100%;
+    transform-style: preserve-3d;
+}
+
+.slip-upper,
+.slip-flap-outside {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+}
+
+.slip-upper {
+    justify-content: flex-end;
+    padding-bottom: 0.6rem;
+    background:
+        linear-gradient(to top, rgb(0 0 0 / 0.06), transparent 0.6rem),
+        linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+        #fbf8f1;
+    border-radius: 0.2rem 0.2rem 0 0;
+}
+
+.slip-flap-outside {
+    transform: rotateX(180deg);
+    background: url('../wrapping-paper.svg') 0 0 / 7.5rem 7.5rem, #17463a;
+    border-radius: 0 0 0.2rem 0.2rem;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
 .slip-for {
@@ -52,7 +94,7 @@
 }
 
 .slip-name {
-    margin: 0.4rem 0 0;
+    margin: 0;
     font-family: var(--friendly);
     font-weight: 800;
     font-size: clamp(2.4rem, 11vw, 3.4rem);
@@ -62,70 +104,30 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    .slip-unfold .slip-paper {
-        animation: slip-swing 1600ms cubic-bezier(0.3, 0.6, 0.3, 1) both;
+    .slip-unfold {
+        animation: slip-arrive 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
     }
 
-    .slip-unfold::before {
-        animation: slip-drop 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-    }
-
-    .slip-unfold .slip-for,
-    .slip-unfold .slip-name {
-        animation: slip-ink 700ms ease-out both;
-    }
-
-    .slip-unfold .slip-for {
-        animation-delay: 700ms;
-    }
-
-    .slip-unfold .slip-name {
-        animation-delay: 950ms;
+    .slip-unfold .slip-flap {
+        animation: slip-open 1100ms cubic-bezier(0.45, 0, 0.2, 1) 650ms both;
     }
 }
 
-/* lowered in, then swinging on its string, less each time, till it hangs */
-@keyframes slip-swing {
-    0% {
-        translate: 0 -2.5rem;
-        rotate: 28deg;
-        opacity: 0;
-    }
-    15% {
-        opacity: 1;
-    }
-    30% {
-        translate: 0 0;
-        rotate: -16deg;
-    }
-    50% {
-        rotate: 9deg;
-    }
-    68% {
-        rotate: -6deg;
-    }
-    84% {
-        rotate: 1deg;
-    }
-    100% {
-        rotate: -2deg;
-    }
-}
-
-@keyframes slip-drop {
+/* put down, folded */
+@keyframes slip-arrive {
     from {
-        translate: 0 -2.5rem;
+        translate: 0 1.5rem;
+        scale: 0.92;
         opacity: 0;
     }
 }
 
-@keyframes slip-ink {
+/* the flap lifted off the bottom half, towards you, and laid open above it */
+@keyframes slip-open {
     from {
-        opacity: 0;
-        filter: blur(0.25rem);
+        transform: rotateX(-180deg);
     }
     to {
-        opacity: 1;
-        filter: none;
+        transform: rotateX(0);
     }
 }

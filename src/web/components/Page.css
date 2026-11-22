@@ -10,31 +10,24 @@
     isolation: isolate;
 }
 
-/* Snow, falling past the stars: three tiles of flakes at different sizes,
-   the bigger (nearer) ones falling faster and drifting, each moved a whole
-   number of its tiles so the loop never shows. Behind everything. */
-.page::before {
-    content: '';
+/* Snow (snow.ts): falling behind everything, and gathering on the
+   footer's divider. */
+.snowfall {
     position: fixed;
     inset: 0;
     z-index: -1;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    background:
-        radial-gradient(circle at 30% 40%, rgb(255 255 255 / 0.4) 0 1px, transparent 1.6px) 0 0 / 10rem 10rem,
-        radial-gradient(circle at 70% 20%, rgb(255 255 255 / 0.5) 0 1.6px, transparent 2.2px) 0 0 / 14rem 14rem,
-        radial-gradient(circle at 20% 70%, rgb(255 255 255 / 0.65) 0 2.2px, transparent 3px) 0 0 / 18rem 18rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .page::before {
-        animation: snow 40s linear infinite;
-    }
-}
-
-@keyframes snow {
-    to {
-        background-position: 0 20rem, 0 14rem, 18rem 36rem;
-    }
+.snowdrift {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    width: 100%;
+    height: 1.75rem;
+    pointer-events: none;
 }
 
 /* Candy-stripe ribbon */
@@ -64,6 +57,7 @@ main.column {
 }
 
 .footer {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;

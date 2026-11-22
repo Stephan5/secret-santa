@@ -1,9 +1,10 @@
-/* A Christmas night, seen from rather further out. Deep space behind
-   everything, starry, lit holly green and cranberry, and snowing; black
+/* A snowy Christmas night. A dark sky behind everything, lit holly green
+   and cranberry, snow falling and settling on the footer; black
    screens for cards, edged in tinsel colours; large, friendly letters
    (Baloo 2, OFL) for headings and a screen's type (Space Mono, OFL) for
-   the small print. The name drawn stays on paper: a gift tag (Slip.css).
-   Always dark: it's night, and it's space. */
+   the small print. The name drawn is written on the back of folded
+   wrapping paper (Slip.css).
+   Always dark: it's night. */
 
 @font-face {
     font-family: 'Baloo 2';
@@ -95,15 +96,12 @@ html {
 body {
     margin: 0;
     color: var(--ink);
-    /* stars, four tiles of them at different sizes so they never line up,
-       one of them gold and one icy, over a holly-green and a cranberry glow */
+    /* a winter night: dark at the top, a little lighter towards the
+       ground, lit faintly holly green and cranberry */
     background:
-        radial-gradient(circle at 15% 20%, #fff 0 1px, transparent 1.5px) 0 0 / 9rem 9rem,
-        radial-gradient(circle at 70% 60%, rgb(255 255 255 / 0.8) 0 1px, transparent 1.5px) 0 0 / 13rem 13rem,
-        radial-gradient(circle at 40% 85%, rgb(255 210 87 / 0.85) 0 1.5px, transparent 2px) 0 0 / 17rem 17rem,
-        radial-gradient(circle at 85% 10%, rgb(140 230 255 / 0.7) 0 1px, transparent 1.5px) 0 0 / 23rem 23rem,
         radial-gradient(ellipse 70% 50% at 85% 10%, var(--nebula-green), transparent) fixed,
         radial-gradient(ellipse 60% 45% at 5% 85%, var(--nebula-red), transparent) fixed,
+        linear-gradient(#080a1a, #151b36) fixed,
         var(--space);
     font-family: var(--sans);
     font-size: 1.0625rem;
@@ -129,9 +127,19 @@ h1 {
     text-shadow: 0.06em 0.06em 0 var(--red);
 }
 
+/* Selected text: frosted over, as it is, without its shadow */
 ::selection {
-    color: var(--space);
-    background: var(--tinsel-gold);
+    color: #fff;
+    background: rgb(160 200 255 / 0.32);
+    text-shadow: none;
+}
+
+/* (titles are for reading, not copying: no selecting them) */
+h1,
+h2,
+h3 {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 h2 {
