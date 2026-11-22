@@ -1,0 +1,5 @@
+{
+  "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'",
+  "referrerPolicy": "no-referrer",
+  "robotsTag": "noindex, nofollow"
+}

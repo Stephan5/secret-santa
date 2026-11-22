@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# A newer push to a pull request cancels its older run; on master they queue
+# instead, so a deploy is never cut off halfway through.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      # For the store's tests against DynamoDB (src/api/store/store.test.ts)
+      dynamodb:
+        image: amazon/dynamodb-local:2.6.1
+        ports:
+          - 8000:8000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+      - run: npm test
+        env:
+          DYNAMODB_ENDPOINT: http://localhost:8000
+
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps --only-shell chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npm run e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      # What the deploy job deploys: exactly what was tested
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            dist/
+            dist-api/
+          retention-days: 7
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.2
+      - run: terraform fmt -check -recursive infra
+      - run: terraform -chdir=infra init -backend=false -lockfile=readonly -input=false
+      - run: terraform -chdir=infra validate
+      - run: terraform -chdir=infra/bootstrap init -backend=false -lockfile=readonly -input=false
+      - run: terraform -chdir=infra/bootstrap validate
+
+  # Pushes to master, once everything has passed, and once the AWS side is
+  # set up (the repository variables AWS_DEPLOY_ROLE_ARN and TF_STATE_BUCKET,
+  # from the README's bootstrap steps). The role only trusts master's pushes
+  # anyway.
+  deploy:
+    needs: [test, terraform]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.2
+          # (so $(terraform output -raw …) gives just the value)
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - run: terraform -chdir=infra init -input=false -lockfile=readonly -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+      - run: terraform -chdir=infra apply -input=false -auto-approve
+
+      - id: outputs
+        run: |
+          echo "bucket=$(terraform -chdir=infra output -raw site_bucket)" >> "$GITHUB_OUTPUT"
+          echo "distribution=$(terraform -chdir=infra output -raw distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "url=$(terraform -chdir=infra output -raw url)" >> "$GITHUB_OUTPUT"
+
+      # Hashed assets cached for good, index.html never (so a deploy shows at
+      # once), the rest briefly; then whatever's left from the last deploy
+      # removed.
+      - name: Upload the site
+        env:
+          BUCKET: ${{ steps.outputs.outputs.bucket }}
+        run: |
+          aws s3 sync dist/assets "s3://$BUCKET/assets" --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync dist "s3://$BUCKET" --exclude "assets/*" --exclude index.html --cache-control "public, max-age=300"
+          aws s3 cp dist/index.html "s3://$BUCKET/index.html" --cache-control "no-cache"
+          aws s3 sync dist "s3://$BUCKET" --delete --size-only
+
+      - run: aws cloudfront create-invalidation --distribution-id "${{ steps.outputs.outputs.distribution }}" --paths "/*"
+
+      # The API answers through CloudFront: a GET, and a POST, whose body
+      # hash CloudFront's signature depends on (a 400 for the empty name is
+      # the API answering; a 403 would be CloudFront or Lambda refusing).
+      - name: Smoke test
+        env:
+          URL: ${{ steps.outputs.outputs.url }}
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 10 --retry-all-errors "$URL/api/health"
+          body='{"name":""}'
+          hash=$(printf '%s' "$body" | sha256sum | cut -d' ' -f1)
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST "$URL/api/groups" \
+            -H 'content-type: application/json' -H "x-amz-content-sha256: $hash" --data "$body")
+          echo "POST /api/groups: $status"
+          test "$status" = 400
+          curl --fail --silent --show-error --output /dev/null "$URL/"

@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (which git ignores) and fill in.
+
+# From create-state-bucket.sh
+state_bucket = "secret-santa-tfstate-<account id>"
+
+# Other sites' CloudFront distributions in the account, which the deploy
+# role must never touch
+protected_distribution_ids = ["<the website's distribution id>"]
