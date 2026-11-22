@@ -166,10 +166,12 @@ export class MemoryStore implements Store {
         this.changed()
     }
 
+    // (keeps counting however late, as DynamoDB does until TTL gets round to
+    // deleting the item: what bounds a count is the time window in its key)
     async increment(key: string, expiresAt: Date) {
         const counter = this.state.counters[key]
-        const count = counter && new Date(counter.expiresAt) > new Date() ? counter.count + 1 : 1
-        this.state.counters[key] = {count, expiresAt: counter && count > 1 ? counter.expiresAt : expiresAt.toISOString()}
+        const count = (counter?.count ?? 0) + 1
+        this.state.counters[key] = {count, expiresAt: counter?.expiresAt ?? expiresAt.toISOString()}
         this.changed()
         return count
     }

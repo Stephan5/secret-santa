@@ -223,6 +223,14 @@ function contract(label: string, makeStore: () => Store) {
             assert.equal(await store.increment(key, expiresAt), 2)
             assert.equal(await store.increment(randomUUID(), expiresAt), 1)
         })
+
+        // (whatever the clock says: the API's clock isn't always the real one)
+        it('keeps counting past a counter\'s expiry', async () => {
+            const key = randomUUID()
+            const expired = new Date(Date.now() - 60_000)
+            assert.equal(await store.increment(key, expired), 1)
+            assert.equal(await store.increment(key, expired), 2)
+        })
     })
 }
 

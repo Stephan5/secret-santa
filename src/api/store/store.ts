@@ -104,6 +104,9 @@ export interface Store {
     getSession(tokenHash: string): Promise<SessionRecord | null>
     deleteSession(tokenHash: string): Promise<void>
 
-    // Adds one to a counter, kept until expiresAt, and returns its new value.
+    // Adds one to a counter and returns its new value. expiresAt is only
+    // housekeeping, when it may be deleted (DynamoDB's TTL does that some
+    // time after): a count isn't reset then, so a rate limit puts its time
+    // window in the key.
     increment(key: string, expiresAt: Date): Promise<number>
 }
