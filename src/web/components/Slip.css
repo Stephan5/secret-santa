@@ -3,12 +3,10 @@
    its plain, gridded back in. It's put down folded small, then opened out
    to the right, then up. */
 .slip {
-    --half: 5.5rem;
+    --half: 6rem;
     --print: url('../wrapping-paper.svg') 0 0 / 6rem 6rem, #17463a;
     margin: 1rem auto 1.5rem;
     width: min(100%, 17rem);
-    rotate: -1.5deg;
-    filter: drop-shadow(0 0.8rem 1.2rem rgb(0 0 0 / 0.55));
 }
 
 /* (the sheet's height is the bottom half's, with room above it for the
@@ -17,6 +15,8 @@
     position: relative;
     margin-top: var(--half);
     perspective: 32rem;
+    rotate: -1.5deg;
+    filter: drop-shadow(0 0.8rem 1.2rem rgb(0 0 0 / 0.55));
 }
 
 /* the back of the paper: off-white, with the faint grid printed for
@@ -27,8 +27,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 1rem;
-    min-height: var(--half);
+    position: relative;
+    overflow: hidden;
+    height: var(--half);
     text-align: center;
     color: var(--paper-ink);
 }
@@ -36,9 +37,6 @@
 /* (the bottom half, its top edge the fold, shaded a little into it, and
    the down fold, faintly) */
 .slip-lower {
-    justify-content: flex-start;
-    padding-top: 0.4rem;
-    padding-bottom: 1rem;
     background:
         linear-gradient(rgb(0 0 0 / 0.08), transparent 0.5rem),
         linear-gradient(to right, transparent calc(50% - 1px), rgb(0 0 0 / 0.07) 50%, transparent calc(50% + 1px)),
@@ -68,8 +66,6 @@
 }
 
 .slip-upper {
-    justify-content: flex-end;
-    padding-bottom: 0.5rem;
     background:
         linear-gradient(to top, rgb(0 0 0 / 0.06), transparent 0.5rem),
         linear-gradient(to right, transparent calc(50% - 1px), rgb(0 0 0 / 0.07) 50%, transparent calc(50% + 1px)),
@@ -123,29 +119,50 @@
     border-radius: 0 0 0.2rem 0;
 }
 
+/* Who it's for, above the sheet */
 p.slip-for {
-    margin: 0;
+    margin: 0 0 0.75rem;
     font-family: var(--mono);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     letter-spacing: 0.02em;
-    color: var(--paper-muted);
+    text-align: center;
+    color: var(--muted);
 }
 
-.slip-name {
+/* The name, across the whole sheet: each half holds a sheet-sized box
+   with it in the middle, the top half showing its top, the bottom its
+   bottom. (Its size is set in Slip.tsx, by how long it is.) */
+.slip-written {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: calc(2 * var(--half));
     margin: 0;
+    padding: 0 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: var(--friendly);
     font-weight: 800;
-    font-size: clamp(2.2rem, 10vw, 2.9rem);
     line-height: 1.05;
     color: var(--paper-red);
+    text-wrap: balance;
     overflow-wrap: anywhere;
+}
+
+.slip-upper .slip-written {
+    top: 0;
+}
+
+.slip-lower .slip-written {
+    top: calc(-1 * var(--half));
 }
 
 /* Unfolding: put down (0–0.45s), opened out to the right (0.6–1.3s), then
    up (1.45–2.3s). Until it's opened right, the bottom half's right side
    is folded under (so hidden). */
 @media (prefers-reduced-motion: no-preference) {
-    .slip-unfold {
+    .slip-unfold .slip-sheet {
         animation: slip-arrive 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
     }
 
