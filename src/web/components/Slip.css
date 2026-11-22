@@ -1,43 +1,73 @@
+/* The name drawn, on a gift tag: card, its top corners clipped, hung on a
+   gold string through a gold-rimmed hole, swinging in when it's first
+   shown and settling. */
 .slip {
-    perspective: 50rem;
-    margin: 1.5rem auto;
-    max-width: 24rem;
+    position: relative;
+    margin: 1rem auto 1.5rem;
+    width: min(100%, 20rem);
+    padding-top: 3.25rem;
+    /* (the tag's shadow, which a clipped box can't cast itself) */
+    filter: drop-shadow(0 0.1rem 0 var(--paper-edge)) drop-shadow(0 0.9rem 1.5rem rgb(0 0 0 / 0.55));
 }
 
-/* A slip of paper, creased across the middle where it was folded */
+/* the string, from out of sight down to the hole */
+.slip::before {
+    content: '';
+    position: absolute;
+    left: calc(50% - 1px);
+    top: 0;
+    width: 2px;
+    height: 4.85rem;
+    background: linear-gradient(var(--tinsel-gold), #c9962e);
+    border-radius: 1px;
+    z-index: 1;
+}
+
 .slip-paper {
+    --hole: 1.6rem;
     position: relative;
-    padding: 2.25rem 1.5rem 2.5rem;
+    padding: 3.4rem 1.5rem 2.25rem;
     text-align: center;
     color: var(--paper-ink);
     background:
-        linear-gradient(to bottom, transparent 49.6%, var(--crease) 50%, transparent 50.4%),
+        /* the hole's gold rim */
+        radial-gradient(circle at 50% var(--hole), transparent 0.5rem, var(--tinsel-gold) 0.5rem 0.72rem, transparent 0.75rem),
+        /* a line ruled across, under the name */
+        linear-gradient(to top, transparent 1.6rem, var(--crease) 1.6rem 1.7rem, transparent 1.7rem),
         linear-gradient(170deg, var(--paper-light), var(--paper));
-    border-radius: 0.25rem;
-    box-shadow: 0 0.1rem 0 var(--paper-edge), 0 0.75rem 2rem var(--shadow);
-    transform: rotate(-1.2deg);
+    clip-path: polygon(3.25rem 0, calc(100% - 3.25rem) 0, 100% 3.25rem, 100% 100%, 0 100%, 0 3.25rem);
+    /* (the hole itself, through to the sky) */
+    mask: radial-gradient(circle at 50% var(--hole), transparent 0.5rem, #000 0.52rem);
+    border-radius: 0 0 0.35rem 0.35rem;
+    transform-origin: 50% var(--hole);
+    rotate: -2deg;
 }
 
 .slip-for {
     margin: 0;
-    font-size: 1rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
     color: var(--paper-muted);
 }
 
 .slip-name {
-    margin: 0.35rem 0 0;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: clamp(2.25rem, 9vw, 3.25rem);
-    line-height: 1.1;
-    color: var(--red);
+    margin: 0.4rem 0 0;
+    font-family: var(--friendly);
+    font-weight: 800;
+    font-size: clamp(2.4rem, 11vw, 3.4rem);
+    line-height: 1.05;
+    color: var(--paper-red);
     overflow-wrap: anywhere;
 }
 
 @media (prefers-reduced-motion: no-preference) {
     .slip-unfold .slip-paper {
-        transform-origin: 50% 0;
-        animation: slip-unfold 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+        animation: slip-swing 1600ms cubic-bezier(0.3, 0.6, 0.3, 1) both;
+    }
+
+    .slip-unfold::before {
+        animation: slip-drop 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
     }
 
     .slip-unfold .slip-for,
@@ -46,27 +76,46 @@
     }
 
     .slip-unfold .slip-for {
-        animation-delay: 650ms;
+        animation-delay: 700ms;
     }
 
     .slip-unfold .slip-name {
-        animation-delay: 900ms;
+        animation-delay: 950ms;
     }
 }
 
-@keyframes slip-unfold {
+/* lowered in, then swinging on its string, less each time, till it hangs */
+@keyframes slip-swing {
     0% {
-        transform: translateY(1.5rem) rotateX(88deg) rotate(-1.2deg);
+        translate: 0 -2.5rem;
+        rotate: 28deg;
         opacity: 0;
     }
-    35% {
+    15% {
         opacity: 1;
     }
-    70% {
-        transform: translateY(0) rotateX(-8deg) rotate(-1.2deg);
+    30% {
+        translate: 0 0;
+        rotate: -16deg;
+    }
+    50% {
+        rotate: 9deg;
+    }
+    68% {
+        rotate: -6deg;
+    }
+    84% {
+        rotate: 1deg;
     }
     100% {
-        transform: rotateX(0) rotate(-1.2deg);
+        rotate: -2deg;
+    }
+}
+
+@keyframes slip-drop {
+    from {
+        translate: 0 -2.5rem;
+        opacity: 0;
     }
 }
 
