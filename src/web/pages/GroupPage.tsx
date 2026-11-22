@@ -15,6 +15,8 @@ import {NotFound} from './Home.tsx'
 export function GroupPage({groupId}: {groupId: string}) {
     const [group, setGroup] = useState<Group | null>(null)
     const [failure, setFailure] = useState<ApiFailure | null>(null)
+    // (whether someone's name is showing here, to suggest starting their own)
+    const [opened, setOpened] = useState(false)
 
     const reload = useCallback(() => {
         api.getGroup(groupId).then(setGroup, error => setFailure(error as ApiFailure))
@@ -38,7 +40,7 @@ export function GroupPage({groupId}: {groupId: string}) {
             </header>
 
             {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
-            {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} nameOf={nameOf} />}
+            {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} onShown={setOpened} nameOf={nameOf} />}
 
             {earlier.length > 0 && (
                 <section className="earlier">
@@ -54,12 +56,13 @@ export function GroupPage({groupId}: {groupId: string}) {
             <p className="organiser-link">
                 <Link href={paths.admin(group.id)}>Manage this Secret Santa</Link>
             </p>
+
+            {opened && !adminSession.get(group.id) && <StartYourOwn />}
         </Page>
     )
 }
 
-function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Draw, onRevealed: () => void, nameOf: (id: string) => string}) {
-    const [opened, setOpened] = useState(false)
+function CurrentDraw({group, draw, onRevealed, onShown, nameOf}: {group: Group, draw: Draw, onRevealed: () => void, onShown: (shown: boolean) => void, nameOf: (id: string) => string}) {
     if (draw.status === 'pending') {
         return (
             <section className="card card-gold">
@@ -74,10 +77,9 @@ function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Dra
     const people = draw.participantIds.map(id => group.people.find(p => p.id === id)!).filter(Boolean)
     return (
         <>
-            <Reveal groupId={group.id} draw={draw} people={people} onRevealed={onRevealed} onShown={setOpened} />
+            <Reveal groupId={group.id} draw={draw} people={people} onRevealed={onRevealed} onShown={onShown} />
             <p className="progress muted">{looked} of {people.length} have opened theirs.</p>
             <Results draw={draw} nameOf={nameOf} />
-            {opened && !adminSession.get(group.id) && <StartYourOwn />}
         </>
     )
 }
