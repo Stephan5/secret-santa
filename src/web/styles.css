@@ -409,6 +409,12 @@ input[type='checkbox'] {
     width: auto;
 }
 
+/* (a date and time takes only the room it needs, leaving the rest for
+   the buttons beside it) */
+.inline-form input[type='datetime-local'] {
+    flex: 0 1 auto;
+}
+
 /* Buttons */
 
 .button {

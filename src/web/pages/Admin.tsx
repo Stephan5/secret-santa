@@ -423,8 +423,9 @@ function Participants({people, chosen, onChange, disabled = false}: {people: Per
     )
 }
 
-// (noon on Christmas Day this year, as the page loaded)
+// (noon on Christmas Day and Boxing Day this year, as the page loaded)
 const christmas = `${new Date().getFullYear()}-12-25T12:00`
+const boxingDay = `${new Date().getFullYear()}-12-26T12:00`
 
 function VisibleFrom({value, onChange}: {value: string, onChange: (value: string) => void}) {
     return (
@@ -434,6 +435,7 @@ function VisibleFrom({value, onChange}: {value: string, onChange: (value: string
             <span className="inline-form">
                 <input type="datetime-local" value={value} onChange={e => onChange(e.target.value)} />
                 <button type="button" className="button button-small" onClick={() => onChange(christmas)}>Christmas Day</button>
+                <button type="button" className="button button-small" onClick={() => onChange(boxingDay)}>Boxing Day</button>
                 {value && <button type="button" className="button button-small" onClick={() => onChange('')}>Clear</button>}
             </span>
         </label>
