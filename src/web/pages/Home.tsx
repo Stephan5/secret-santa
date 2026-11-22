@@ -6,7 +6,7 @@ export function Home() {
     return (
         <Page>
             <section className="hero">
-                <h1>Secret Santa, sorted</h1>
+                <h1>Secret Santa,<br/>sorted</h1>
                 <p className="lede">
                     Put everyone's names in, draw them all at once, and send one link. Everyone finds out
                     who they're buying for on their own phone, wherever they are.

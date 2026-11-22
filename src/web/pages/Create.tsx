@@ -67,8 +67,8 @@ export function Create() {
                 <fieldset className="field">
                     <legend className="label">Organiser password</legend>
                     <span className="hint">
-                        You'll need it to run the draw, change the names, or reset one that was opened on the wrong
-                        phone. Everyone else just needs the link. There's no way to get it back, so keep it safe.
+                        You'll need it to run the draw, update the names, or change any of the rules.
+                        Everyone else just needs the link. There's no way to get it back, so keep it safe.
                     </span>
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
                         minLength={limits.passwordMin} maxLength={limits.passwordMax} autoComplete="new-password" aria-label="Password" placeholder="Password" />
