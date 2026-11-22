@@ -70,6 +70,22 @@ main.column {
     color: var(--muted);
 }
 
+/* As on blakeslee.uk: small, in the footer's colour, the name linked
+   home, set apart by its underline. */
+.copyright {
+    font-size: 0.8rem;
+}
+
+.copyright a {
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+    transition: text-decoration-color 0.2s;
+}
+
+.copyright a:hover {
+    text-decoration-color: currentColor;
+}
+
 .wordmark {
     display: inline-flex;
     align-items: center;

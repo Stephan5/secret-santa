@@ -5,7 +5,7 @@ import {startSnow} from '../snow.ts'
 import './Page.css'
 
 // Every page: the candy-stripe ribbon across the top, the content in a
-// column, and a small footer, with snow falling behind it all and
+// column, and a small footer (its name, and the copyright), with snow falling behind it all and
 // gathering on the footer's divider (snow.ts).
 export function Page({title, children, wide = false}: {title?: string, children: ReactNode, wide?: boolean}) {
     useEffect(() => {
@@ -25,7 +25,9 @@ export function Page({title, children, wide = false}: {title?: string, children:
                     <img src="/favicon.svg" alt="" width="20" height="20" />
                     Secret Santa
                 </Link>
-                <span>Without the hat.</span>
+                <p className="copyright">
+                    © {new Date().getFullYear()} <a href="https://blakeslee.uk">Stephan Blakeslee</a>
+                </p>
             </footer>
         </div>
     )
