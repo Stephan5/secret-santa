@@ -431,13 +431,13 @@ function VisibleFrom({value, onChange}: {value: string, onChange: (value: string
     return (
         <label className="field">
             <span className="label">Show everyone the full draw results from</span>
-            <span className="hint">Leave it empty to keep it secret for good.</span>
             <span className="inline-form">
                 <input type="datetime-local" value={value} onChange={e => onChange(e.target.value)} />
                 <button type="button" className="button button-small" onClick={() => onChange(christmas)}>Christmas Day</button>
                 <button type="button" className="button button-small" onClick={() => onChange(boxingDay)}>Boxing Day</button>
                 {value && <button type="button" className="button button-small" onClick={() => onChange('')}>Clear</button>}
             </span>
+            <span className="hint">Leave it empty to keep it secret for good.</span>
         </label>
     )
 }

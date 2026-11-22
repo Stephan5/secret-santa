@@ -32,7 +32,7 @@ const tune = {
     // (how wide each flake's snow spreads where it lands)
     spread: 0.75,
     // (how fast the snow evens out as it lies; lower leaves it lumpier for longer)
-    smoothing: 0.5,
+    smoothing: 0.75,
     // (how much more of it lands where the drifts are deepest: 0, an even
     // blanket that only takes their shape as it fills up; 2, every bit of it
     // in proportion, as if it were swelling up into them)
