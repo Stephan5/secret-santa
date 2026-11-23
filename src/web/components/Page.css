@@ -137,7 +137,7 @@ main.column {
     display: grid;
     place-items: center;
     border-radius: 0.6rem;
-    background: var(--tinsel-red);
+    background: var(--tinsel-violet);
     color: var(--space);
     font-family: var(--friendly);
     font-size: 1.2rem;
@@ -183,6 +183,12 @@ main.column {
 
 /* A group */
 
+/* (the draw a panel is for, at its top) */
+.draw-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.75rem;
+}
+
 .group-head {
     display: flex;
     flex-direction: column;
@@ -197,6 +203,66 @@ main.column {
 
 .progress {
     text-align: center;
+}
+
+/* The panel for finding out who you're buying for: the same size and shape
+   whether it's asking who you are, checking, or showing the slip (Slip.tsx).
+   Each step is laid in the same place, all but the one it's on hidden, so
+   it's as big as the biggest; each in the middle of the room under the
+   draw's name, which is over them all. */
+.card.reveal-panel {
+    container-type: inline-size;
+}
+
+/* (what's said one way where there's room, and more shortly where there
+   isn't: as wide as most phones) */
+.when-narrow {
+    display: none;
+}
+
+@container (max-width: 26rem) {
+    .when-wide {
+        display: none;
+    }
+
+    .when-narrow {
+        display: inline;
+    }
+}
+
+/* (centred throughout, as the slip is: its title, and each step) */
+.card.reveal-panel {
+    text-align: center;
+}
+
+.reveal-panel .button-large {
+    align-self: center;
+}
+
+.reveal-panel .row {
+    justify-content: center;
+}
+
+.reveal-layers {
+    display: grid;
+    /* (as wide as the panel, whatever's in them) */
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* (and what's said under it, once it's opened) */
+.reveal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reveal-layer {
+    grid-area: 1 / 1;
+    align-self: center;
+}
+
+.reveal-layer-off {
+    visibility: hidden;
 }
 
 .confirm-question {
@@ -216,13 +282,38 @@ main.column {
     font-size: 1.2rem;
 }
 
-/* (over the list of who had whom, which is centred) */
+/* (over the full draw results, which are centred) */
 .results h2 {
     text-align: center;
 }
 
 .results-later {
     text-align: center;
+}
+
+/* (an earlier draw: smaller than the screen for this year's, with room
+   between them for the snow on each) */
+.earlier {
+    gap: 1rem;
+}
+
+.card.earlier-draw {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.earlier-draw h3 {
+    font-size: 1.2rem;
+}
+
+.earlier-draw details {
+    margin-top: 0.4rem;
+}
+
+.earlier-draw summary {
+    color: var(--entry);
 }
 
 .pairings {

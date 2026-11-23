@@ -130,6 +130,12 @@ h3 {
     text-wrap: balance;
 }
 
+/* (and the rest, no word left on a line of its own at the end) */
+p,
+.hint {
+    text-wrap: pretty;
+}
+
 /* friendly, rounded and fat, in white, cast in cranberry */
 h1 {
     font-size: clamp(2.1rem, 8vw, 3rem);
@@ -244,7 +250,8 @@ a {
    faintly. Each says which colour it is (card-gold and so on), so that
    none on a page is next to one the same. */
 .card {
-    --entry: var(--tinsel-ice);
+    --entry: var(--tinsel-violet);
+    position: relative;
     background: var(--surface);
     border: 2px solid var(--entry);
     border-radius: var(--radius);
@@ -260,16 +267,17 @@ a {
 .card-ice { --entry: var(--tinsel-ice); }
 .card-violet { --entry: var(--tinsel-violet); }
 
-/* (a list of them takes two in turn: the draws on the organiser's page,
-   earlier draws on everyone's) */
-.draws > .draw-card:nth-of-type(odd) { --entry: var(--tinsel-red); }
-.draws > .draw-card:nth-of-type(even) { --entry: var(--tinsel-violet); }
-.earlier > .card:nth-of-type(odd) { --entry: var(--tinsel-green); }
-.earlier > .card:nth-of-type(even) { --entry: var(--tinsel-violet); }
-
 .card h2,
 .card h3 {
     color: var(--entry);
+}
+
+/* (snow settling on a screen's top edge: Snowdrift.tsx, snow.ts) */
+.card .snowdrift {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    pointer-events: none;
 }
 
 /* Forms */
@@ -296,7 +304,7 @@ legend.label,
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--tinsel-ice);
+    color: var(--tinsel-violet);
 }
 
 /* (a fieldset's legend sits outside its flex layout, so it doesn't get
@@ -407,6 +415,12 @@ input[type='checkbox'] {
     width: auto;
 }
 
+/* (a date and time takes only the room it needs, leaving the rest for
+   the buttons beside it) */
+.inline-form input[type='datetime-local'] {
+    flex: 0 1 auto;
+}
+
 /* Buttons */
 
 .button {
@@ -464,6 +478,13 @@ input[type='checkbox'] {
     font-size: 1.25rem;
     padding: 0.85rem 1.5rem;
     align-self: flex-start;
+    /* (onto two lines, rather than out of what it's in, where there isn't
+       room for it on one) */
+    max-width: 100%;
+    white-space: normal;
+    text-wrap: balance;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .button-small {
@@ -581,6 +602,21 @@ input[type='checkbox'] {
     flex: 1 1 14rem;
     width: auto;
     font-size: 0.95rem;
+}
+
+/* (what a button can say, one over the other, all but the one it says
+   now hidden: so it's as wide as the widest, whichever it says) */
+.swap {
+    display: grid;
+}
+
+.swap > * {
+    grid-area: 1 / 1;
+    text-align: center;
+}
+
+.swap > .swap-off {
+    visibility: hidden;
 }
 
 /* Two people and a button: side by side when there's room, stacked when not */
