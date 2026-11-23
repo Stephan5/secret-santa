@@ -210,8 +210,37 @@ main.column {
    Each step is laid in the same place, all but the one it's on hidden, so
    it's as big as the biggest; each in the middle of the room under the
    draw's name, which is over them all. */
-.reveal-panel .draw-title {
+.card.reveal-panel {
+    container-type: inline-size;
+}
+
+/* (what's said one way where there's room, and more shortly where there
+   isn't: as wide as most phones) */
+.when-narrow {
+    display: none;
+}
+
+@container (max-width: 26rem) {
+    .when-wide {
+        display: none;
+    }
+
+    .when-narrow {
+        display: inline;
+    }
+}
+
+/* (centred throughout, as the slip is: its title, and each step) */
+.card.reveal-panel {
     text-align: center;
+}
+
+.reveal-panel .button-large {
+    align-self: center;
+}
+
+.reveal-panel .row {
+    justify-content: center;
 }
 
 .reveal-layers {

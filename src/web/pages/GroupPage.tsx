@@ -162,7 +162,11 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
                             </select>
                         </label>
                         <ErrorNote message={error} />
-                        <button type="submit" className="button button-primary button-large" disabled={!person}>Show me who I'm buying for</button>
+                        {/* (just "Show me" where the panel's narrow, as on most phones) */}
+                        <button type="submit" className="button button-primary button-large" disabled={!person} aria-label="Show me who I'm buying for">
+                            <span className="when-wide">Show me who I'm buying for</span>
+                            <span className="when-narrow">Show me</span>
+                        </button>
                         <p className="hint">
                             Each name opens on one device only. If yours says it's already been opened and it wasn't you,
                             ask the organiser to reset it.
