@@ -52,7 +52,7 @@ export function GroupPage({groupId}: {groupId: string}) {
             )}
 
             <p className="organiser-link">
-                <Link href={paths.admin(group.id)}>Organising? Manage this Secret Santa</Link>
+                <Link href={paths.admin(group.id)}>Manage this Secret Santa</Link>
             </p>
         </Page>
     )
