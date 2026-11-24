@@ -159,6 +159,19 @@ p.slip-for {
     text-wrap: balance;
 }
 
+/* (more than one name: one a line, with room between, so a name that
+   takes two lines reads as one) */
+.slip-names {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3em;
+}
+
+.slip-names-line {
+    display: block;
+}
+
 .slip-last-word {
     white-space: nowrap;
 }

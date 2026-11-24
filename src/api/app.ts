@@ -120,6 +120,10 @@ export function createApp(options: AppOptions): App {
         return unique
     }
 
+    // (checked against how many are in the draw only when it's drawn, so
+    // taking someone out of the hat isn't held up by it)
+    const giftsEach = (value: unknown) => check.int(value, 'How many each buys for', 1, limits.giftsEach)
+
     function rules(aggregate: GroupAggregate, value: unknown): Rules {
         const body = check.object(value)
         const exclusions: [string, string][] = []
@@ -263,6 +267,7 @@ export function createApp(options: AppOptions): App {
                 name,
                 status: 'pending',
                 participantIds: participants(aggregate, body.participantIds),
+                giftsEach: giftsEach(body.giftsEach ?? 1),
                 resultsVisibleFrom: check.instant(body.resultsVisibleFrom ?? null, 'Results visible from'),
                 createdAt: context.now.toISOString(),
                 drawnAt: null,
@@ -281,10 +286,15 @@ export function createApp(options: AppOptions): App {
                 if (found.status !== 'pending') throw conflict('Names have been drawn, so who takes part is set. Undo the draw to change it.')
                 participantIds = participants(aggregate, body.participantIds)
             }
+            let gifts: number | undefined
+            if (body.giftsEach !== undefined) {
+                if (found.status !== 'pending') throw conflict('Names have been drawn, so how many each buys for is set. Undo the draw to change it.')
+                gifts = giftsEach(body.giftsEach)
+            }
             const resultsVisibleFrom = body.resultsVisibleFrom === undefined
                 ? undefined
                 : check.instant(body.resultsVisibleFrom, 'Results visible from')
-            await store.updateDraw(aggregate.group.id, found.id, found.status, {name, participantIds, resultsVisibleFrom})
+            await store.updateDraw(aggregate.group.id, found.id, found.status, {name, participantIds, giftsEach: gifts, resultsVisibleFrom})
             return view(aggregate.group.id, context.now)
         }],
 
@@ -311,14 +321,20 @@ export function createApp(options: AppOptions): App {
                 .map(d => aggregate.pairings.filter(p => p.drawId === d.id))
             const outcome = drawNames({
                 participantIds: found.participantIds,
+                giftsEach: found.giftsEach,
                 exclusions: groupRules.exclusions,
                 noSwaps: groupRules.noSwaps,
                 singleLoop: groupRules.singleLoop,
                 previous,
             }, {random})
             if (!outcome.ok) {
-                if (outcome.reason === 'too-few') throw badRequest('A draw needs at least two people.')
-                throw new HttpError(422, 'draw-impossible', impossibleMessage(outcome.blockers), outcome.blockers)
+                if (outcome.reason === 'too-few') {
+                    const n = found.participantIds.length
+                    throw badRequest(n < 2
+                        ? 'A draw needs at least two people.'
+                        : `With ${n} people in the draw, each can buy for at most ${n - 1}.`)
+                }
+                throw new HttpError(422, 'draw-impossible', impossibleMessage(outcome.blockers, outcome.fewerGifts), outcome.blockers)
             }
             await store.saveDraw(aggregate.group.id, found.id, found.status, context.now.toISOString(), outcome.pairings)
             return view(aggregate.group.id, context.now)
@@ -348,8 +364,8 @@ export function createApp(options: AppOptions): App {
                     `Someone's already opened ${person.name}'s on another device. If that wasn't ${person.name}, ask the group organiser to reset it.`)
             }
             if (result.outcome === 'missing') throw notFound("That person isn't in this draw.")
-            const receiver = findPerson(aggregate, result.pairing.receiverId)
-            const response: RevealResponse = {receiver: {id: receiver.id, name: receiver.name}, revealedAt: result.pairing.revealedAt!}
+            const receivers = result.pairing.receiverIds.map(id => findPerson(aggregate, id))
+            const response: RevealResponse = {receivers: receivers.map(({id, name}) => ({id, name})), revealedAt: result.pairing.revealedAt!}
             return json(200, response)
         }],
 

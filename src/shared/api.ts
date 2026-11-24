@@ -2,7 +2,8 @@
 //
 // Naming: a Group is what the site calls "a Secret Santa" (the family's,
 // the office's), its People are the names in the hat, and each Draw (2026,
-// 2027…) pairs some of them up, giver → receiver. The site never calls a
+// 2027…) pairs some of them up, giver → receiver (or receivers, when
+// each buys for more than one). The site never calls a
 // person "a Secret Santa", since that could mean either end of a pairing.
 
 export type Rules = {
@@ -35,13 +36,15 @@ export type Person = {
 
 export type DrawStatus = 'pending' | 'drawn'
 
-export type Pairing = {giverId: string, receiverId: string}
+export type Pairing = {giverId: string, receiverIds: string[]}
 
 export type Draw = {
     id: string
     name: string
     status: DrawStatus
     participantIds: string[]
+    // How many people each buys for
+    giftsEach: number
     // Who has looked, not who they got.
     revealedIds: string[]
     // From then on everyone can see every pairing. ISO instant, or null for
@@ -72,10 +75,10 @@ export type LoginRequest = {password: string}
 export type UpdateGroupRequest = {name?: string, rules?: Rules}
 export type AddPersonRequest = {name: string}
 export type UpdatePersonRequest = {name?: string, active?: boolean}
-export type CreateDrawRequest = {name: string, participantIds: string[], resultsVisibleFrom: string | null}
-export type UpdateDrawRequest = {name?: string, participantIds?: string[], resultsVisibleFrom?: string | null}
+export type CreateDrawRequest = {name: string, participantIds: string[], giftsEach?: number, resultsVisibleFrom: string | null}
+export type UpdateDrawRequest = {name?: string, participantIds?: string[], giftsEach?: number, resultsVisibleFrom?: string | null}
 export type RevealRequest = {personId: string, deviceToken: string}
-export type RevealResponse = {receiver: {id: string, name: string}, revealedAt: string}
+export type RevealResponse = {receivers: {id: string, name: string}[], revealedAt: string}
 
 export type ErrorCode =
     | 'bad-request'

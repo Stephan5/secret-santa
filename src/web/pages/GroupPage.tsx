@@ -4,7 +4,7 @@ import {adminSession, api, ApiFailure} from '../api.ts'
 import {ErrorNote, Loading, Page} from '../components/Page.tsx'
 import {Slip} from '../components/Slip.tsx'
 import {deviceToken, forgetReveal, rememberReveal, revealedHere} from '../device.ts'
-import {formatDay, formatWhen} from '../format.ts'
+import {formatDay, formatWhen, listOf, plural} from '../format.ts'
 import {paths} from '../router.ts'
 import {Link} from '../components/Link.tsx'
 import {Snowdrift} from '../components/Snowdrift.tsx'
@@ -76,6 +76,7 @@ function CurrentDraw({group, draw, onRevealed, onShown, nameOf}: {group: Group, 
                 <h2 className="draw-title">{draw.name}</h2>
                 <p>Names haven't been drawn yet. Check back once the group organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
+                {draw.giftsEach > 1 && <p className="muted">Everyone's buying for {plural(draw.giftsEach, 'person', 'people')} this time.</p>}
             </section>
         )
     }
@@ -104,7 +105,7 @@ function CurrentDraw({group, draw, onRevealed, onShown, nameOf}: {group: Group, 
     )
 }
 
-type Shown = {person: Person, receiverName: string, fresh: boolean}
+type Shown = {person: Person, receiverNames: string[], fresh: boolean}
 
 function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, draw: Draw, people: Person[], onRevealed: () => void, onShown: (shown: boolean) => void}) {
     const [chosen, setChosen] = useState('')
@@ -128,7 +129,7 @@ function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, 
         const person = people.find(p => p.id === last)
         if (!person) return
         api.reveal(groupId, draw.id, person.id, deviceToken().token)
-            .then(({receiver}) => setShown({person, receiverName: receiver.name, fresh: false}))
+            .then(({receivers}) => setShown({person, receiverNames: receivers.map(r => r.name), fresh: false}))
             .catch(() => forgetReveal(draw.id, person.id))
             .finally(() => setCheckingHere(false))
     }, [groupId, draw.id, people])
@@ -139,9 +140,9 @@ function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, 
         setBusy(true)
         setError(null)
         try {
-            const {receiver} = await api.reveal(groupId, draw.id, person.id, deviceToken().token)
+            const {receivers} = await api.reveal(groupId, draw.id, person.id, deviceToken().token)
             rememberReveal(draw.id, person.id)
-            setShown({person, receiverName: receiver.name, fresh: true})
+            setShown({person, receiverNames: receivers.map(r => r.name), fresh: true})
             onRevealed()
         } catch (failure) {
             setError(failure instanceof ApiFailure ? failure.message : 'Something went wrong.')
@@ -208,7 +209,7 @@ function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, 
                         </div>
                     </div>
                     <div className={layer('slip')} inert={off('slip')} role={shown ? 'status' : undefined} aria-live={shown ? 'polite' : undefined}>
-                        <Slip forName={shown?.person.name ?? longest(people)} receiverName={shown?.receiverName ?? longest(people)} unfold={!!shown?.fresh} />
+                        <Slip forName={shown?.person.name ?? longest(people)} receiverNames={shown?.receiverNames ?? longestFew(people, draw.giftsEach)} unfold={!!shown?.fresh} />
                     </div>
                 </div>
             </div>
@@ -250,6 +251,11 @@ function StartYourOwn({heading}: {heading: string}) {
     )
 }
 
+// (the longest few, for a slip of several names not opened yet)
+function longestFew(people: Person[], count: number): string[] {
+    return people.map(p => p.name).toSorted((a, b) => b.length - a.length).slice(0, count)
+}
+
 function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
     if (draw.results) {
         return (
@@ -268,11 +274,11 @@ function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
 function Pairings({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
     return (
         <ul className="pairings">
-            {draw.results?.map(({giverId, receiverId}) => (
+            {draw.results?.map(({giverId, receiverIds}) => (
                 <li key={giverId}>
                     <span className="pair-name">{nameOf(giverId)}</span>
                     <PairArrow />
-                    <span className="pair-name">{nameOf(receiverId)}</span>
+                    <span className="pair-name">{listOf(receiverIds.map(nameOf))}</span>
                 </li>
             ))}
         </ul>

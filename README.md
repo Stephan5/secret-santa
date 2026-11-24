@@ -10,10 +10,10 @@ Secret Santa, sorted. Put everyone's names in, draw them all at once, and send o
 
 - **A Secret Santa** (a *group* in the code) has a name, an organiser password, the names in the hat (*people*), some rules, and its *draws*: 2026, 2027 and so on. Anyone can start one. It lives at `/g/<uuid>`, and the link is the only way in: nothing lists them.
 - **The organiser** signs in at `/g/<uuid>/admin` with the password to add, rename and take out people, set the rules, and create, run, redo and delete draws. They see who has opened their name, never who has whom.
-- **A draw** pairs up some of the people, chosen when it's created, all at once on the server, so nobody's left holding their own name. Until anyone has looked, it can be drawn again, undone or deleted.
+- **A draw** pairs up some of the people, chosen when it's created, all at once on the server, so nobody's left holding their own name. Each person buys for one other, or for up to five, also set on the draw (and bought for by as many). Until anyone has looked, it can be drawn again, undone or deleted.
 - **Opening a name** is tied to the first browser to do it: that one can come back to it, any other is told it's already been opened. So peeking can't be stopped (anyone with the link can open a name nobody's opened yet), but it shows: the real person finds theirs already opened, and asks the organiser, who can reset it.
 - **Results** can be shown to everyone from a date and time set on the draw (Christmas Day, say). Before then nobody, the organiser included, can see a pairing but its giver.
-- **Rules**: people who never draw each other (couples, either way round), not getting who you had in the last N draws (one, by default), no swaps (if A has B, B doesn't have A), and one big loop (A → B → C → … → A). When no draw fits, it says which rules are in the way.
+- **Rules**: people who never draw each other (couples, either way round), not getting who you had in the last N draws (one, by default), no swaps (if A has B, B doesn't have A), and one big loop (A → B → C → … → A; with more than one each, every round is its own loop). When no draw fits, it says which rules are in the way, and, with more than one each, how many each could buy for instead.
 
 The site never calls a person "a Secret Santa", which could mean either end of a pairing: you're "buying for" someone.
 
@@ -62,9 +62,9 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm test
 
 ## Drawing names
 
-`src/api/draw.ts`. A draw is a random permutation of the people in it, in which nobody gets themselves and every rule holds. It shuffles until a shuffle fits, so every draw that fits is equally likely. If the rules leave so few that 20,000 shuffles all miss, it searches for one instead (still random, though not quite uniform), or proves there isn't one, and then tries dropping each rule in turn to say which are in the way. Randomness comes from `crypto.randomInt`.
+`src/api/draw.ts`. A draw is a random permutation of the people in it, in which nobody gets themselves and every rule holds. It shuffles until a shuffle fits, so every draw that fits is equally likely. With more than one each, it's that many rounds, each a permutation, none giving anyone someone they have in another, shuffled a round at a time (random, though no longer exactly uniform). If the rules leave so few that 20,000 shuffles all miss, it searches for one instead (still random, though not quite uniform), or proves there isn't one, and then tries dropping each rule in turn to say which are in the way. Randomness comes from `crypto.randomInt`.
 
-Its tests (`draw.test.ts`) check, against a brute-force enumeration of hundreds of random small groups and rule sets, that it finds a draw exactly when one exists and that every draw keeps every rule, and that each possible draw comes up equally often (chi-squared).
+Its tests (`draw.test.ts`) check, against a brute-force enumeration of hundreds of random small groups and rule sets (one each and several), that it finds a draw exactly when one exists and that every draw keeps every rule, and that each possible draw comes up equally often with one each (chi-squared).
 
 ## Security
 

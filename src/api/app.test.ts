@@ -238,6 +238,7 @@ describe('API', () => {
                     name: '2026',
                     status: 'pending',
                     participantIds: [as('Mum'), as('Dad')],
+                    giftsEach: 1,
                     revealedIds: [],
                     resultsVisibleFrom: '2026-12-25T10:00:00.000Z',
                     createdAt: undefined,
@@ -267,8 +268,58 @@ describe('API', () => {
             setClock('2026-12-25T10:00:00.000Z')
             const results = (await admin('GET', '')).body.draws[0].results!
             assert.equal(results.length, 5)
-            assert.deepEqual(new Set(results.map(r => r.receiverId)), new Set(draw.participantIds))
-            assert.ok(results.every(r => r.giverId !== r.receiverId))
+            assert.deepEqual(new Set(results.flatMap(r => r.receiverIds)), new Set(draw.participantIds))
+            assert.ok(results.every(r => r.receiverIds.length === 1 && r.receiverIds[0] !== r.giverId))
+        })
+
+        it('has each buy for more than one, when asked', async () => {
+            const {group, call, setClock} = setup()
+            const {admin, as, id} = await group(['Mum', 'Dad', 'Sue', 'Gran', 'Grandad'])
+            const everyone = ['Mum', 'Dad', 'Sue', 'Gran', 'Grandad'].map(as)
+            const {body} = await admin('POST', '/draws', {name: '2026', participantIds: everyone, giftsEach: 2, resultsVisibleFrom: '2026-12-25T10:00:00.000Z'})
+            const drawId = body.draws[0].id
+            assert.equal(body.draws[0].giftsEach, 2)
+            assert.equal((await admin('POST', `/draws/${drawId}/run`)).status, 200)
+
+            const opened = await call<RevealResponse>('POST', `/api/groups/${id}/draws/${drawId}/reveal`, {personId: as('Mum'), deviceToken: device(1)})
+            assert.equal(opened.body.receivers.length, 2)
+            assert.ok(opened.body.receivers.every(r => r.id !== as('Mum')))
+            assert.notEqual(opened.body.receivers[0].id, opened.body.receivers[1].id)
+
+            setClock('2026-12-25T10:00:00.000Z')
+            const results = (await admin('GET', '')).body.draws[0].results!
+            assert.ok(results.every(r => r.receiverIds.length === 2))
+            // (everyone bought for twice)
+            for (const person of everyone) assert.equal(results.filter(r => r.receiverIds.includes(person)).length, 2)
+        })
+
+        it('checks how many each buys for', async () => {
+            const {group} = setup()
+            const {admin, as} = await group(['Mum', 'Dad', 'Sue'])
+            const everyone = [as('Mum'), as('Dad'), as('Sue')]
+            for (const giftsEach of [0, 6, 1.5, '2']) {
+                assert.equal((await admin('POST', '/draws', {name: '2026', participantIds: everyone, giftsEach, resultsVisibleFrom: null})).status, 400)
+            }
+            // More than the others in the draw: said when drawing
+            const {body} = await admin('POST', '/draws', {name: '2026', participantIds: everyone, giftsEach: 3, resultsVisibleFrom: null})
+            const drawId = body.draws[0].id
+            const tooMany = await admin<ApiError>('POST', `/draws/${drawId}/run`)
+            assert.equal(tooMany.status, 400)
+            assert.equal(tooMany.body.message, 'With 3 people in the draw, each can buy for at most 2.')
+            // Changeable till it's drawn
+            assert.equal((await admin('PATCH', `/draws/${drawId}`, {giftsEach: 2})).body.draws[0].giftsEach, 2)
+            assert.equal((await admin('POST', `/draws/${drawId}/run`)).status, 200)
+            assert.equal((await admin('PATCH', `/draws/${drawId}`, {giftsEach: 1})).status, 409)
+        })
+
+        it('says when fewer each would work', async () => {
+            const {group} = setup()
+            const {admin, as} = await group(['Mum', 'Dad', 'Sue', 'Gran'])
+            await admin('PATCH', '', {rules: {exclusions: [], avoidRecentDraws: 1, noSwaps: true, singleLoop: false}})
+            const {body} = await admin('POST', '/draws', {name: '2026', participantIds: ['Mum', 'Dad', 'Sue', 'Gran'].map(as), giftsEach: 2, resultsVisibleFrom: null})
+            const response = await admin<ApiError>('POST', `/draws/${body.draws[0].id}/run`)
+            assert.equal(response.status, 422)
+            assert.equal(response.body.message, 'No draw fits these rules. It would work without the "No swaps" rule, or with each buying for one.')
         })
 
         it('keeps to the rules, naming those in the way when it can’t', async () => {
@@ -296,7 +347,7 @@ describe('API', () => {
                 assert.equal(ran.status, 200)
                 results.push(ran.body.draws.find(d => d.id === drawId)!.results)
             }
-            const key = (pairings: Pairing[] | null) => pairings!.map(p => `${p.giverId}>${p.receiverId}`).sort().join()
+            const key = (pairings: Pairing[] | null) => pairings!.map(p => `${p.giverId}>${p.receiverIds}`).sort().join()
             assert.notEqual(key(results[0]), key(results[1]))
             assert.notEqual(key(results[1]), key(results[2]))
             assert.equal(key(results[0]), key(results[2]))
@@ -349,7 +400,8 @@ describe('API', () => {
             const {as, reveal, id} = await drawn()
             const first = await reveal(as('Mum'), device(1))
             assert.equal(first.status, 200)
-            assert.ok(['Dad', 'Sue'].includes(first.body.receiver.name))
+            assert.equal(first.body.receivers.length, 1)
+            assert.ok(['Dad', 'Sue'].includes(first.body.receivers[0].name))
             assert.match(first.body.revealedAt, /^2026-11-22T12:00:00\.\d{3}Z$/)
 
             // The same browser can see it again
@@ -375,7 +427,7 @@ describe('API', () => {
             assert.deepEqual(reset.body.draws[0].revealedIds, [])
             const second = await reveal(as('Dad'), device(2))
             assert.equal(second.status, 200)
-            assert.deepEqual(second.body.receiver, first.body.receiver)
+            assert.deepEqual(second.body.receivers, first.body.receivers)
             assert.equal((await reveal(as('Dad'), device(1))).status, 409)
         })
 
@@ -404,7 +456,7 @@ describe('API', () => {
             setClock('2026-12-25T09:59:59.999Z')
             const {results} = (await call<Group>('GET', `/api/groups/${id}`)).body.draws[0]
             assert.equal(results!.length, 3)
-            assert.equal(results!.find(r => r.giverId === as('Mum'))!.receiverId, mum.receiver.id)
+            assert.deepEqual(results!.find(r => r.giverId === as('Mum'))!.receiverIds, mum.receivers.map(r => r.id))
         })
     })
 

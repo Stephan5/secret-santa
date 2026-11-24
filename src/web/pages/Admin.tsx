@@ -316,7 +316,10 @@ function RulesSection({group, setGroup, client, signedOut}: SectionProps) {
                 <input type="checkbox" checked={rules.singleLoop} disabled={busy} onChange={e => save({singleLoop: e.target.checked})} />
                 <span>
                     <span className="label">One big loop</span>
-                    <span className="hint">Everyone in a single chain, each buying for the next, rather than little circles.</span>
+                    <span className="hint">
+                        Everyone in a single chain, each buying for the next, rather than little circles.
+                        When everyone buys for more than one, each round of it is its own loop.
+                    </span>
                 </span>
             </label>
             <ErrorNote message={error} />
@@ -340,12 +343,14 @@ function Draws(props: SectionProps) {
     const chosen = new Set(active.filter(p => !leftOut.has(p.id)).map(p => p.id))
     const setChosen = (next: Set<string>) => setLeftOut(new Set(active.filter(p => !next.has(p.id)).map(p => p.id)))
     const [visibleFrom, setVisibleFrom] = useState('')
+    const [giftsEach, setGiftsEach] = useState(1)
     const {act, busy, error} = useAction(setGroup, signedOut)
 
     function startCreating() {
         setName(nextDrawName(group))
         setLeftOut(new Set())
         setVisibleFrom('')
+        setGiftsEach(1)
         setCreating(true)
     }
 
@@ -362,6 +367,7 @@ function Draws(props: SectionProps) {
                         const next = await client.createDraw({
                             name,
                             participantIds: active.filter(p => chosen.has(p.id)).map(p => p.id),
+                            giftsEach,
                             resultsVisibleFrom: fromLocalInput(visibleFrom),
                         })
                         // (the snow on the form staying on the draw it's become)
@@ -378,17 +384,18 @@ function Draws(props: SectionProps) {
                         <input value={name} onChange={e => setName(e.target.value)} maxLength={limits.drawName} required />
                     </label>
                     <Participants people={active} chosen={chosen} onChange={setChosen} />
+                    <GiftsEach value={giftsEach} onChange={setGiftsEach} people={chosen.size} />
                     <VisibleFrom value={visibleFrom} onChange={setVisibleFrom} />
                     <ErrorNote message={error} />
                     <div className="row">
-                        <button type="submit" className="button button-primary" disabled={busy || chosen.size < 2}>Create draw</button>
+                        <button type="submit" className="button button-primary" disabled={busy || chosen.size < 2 || giftsEach >= chosen.size}>Create draw</button>
                         {group.draws.length > 0 && <button type="button" className="button" onClick={() => setCreating(false)}>Cancel</button>}
                     </div>
                 </form>
             )}
             {/* (keyed on what its form holds, so it starts afresh when that changes underneath it) */}
             {group.draws.map((draw, i) => (
-                <DrawCard key={`${draw.id} ${draw.status} ${draw.participantIds.join()} ${draw.resultsVisibleFrom}`} {...props} draw={draw} colour={drawColour(group.draws.length - 1 - i)} />
+                <DrawCard key={`${draw.id} ${draw.status} ${draw.participantIds.join()} ${draw.giftsEach} ${draw.resultsVisibleFrom}`} {...props} draw={draw} colour={drawColour(group.draws.length - 1 - i)} />
             ))}
         </section>
     )
@@ -423,6 +430,21 @@ function Participants({people, chosen, onChange, disabled = false}: {people: Per
     )
 }
 
+// How many people each buys for: up to one fewer than are in the draw.
+function GiftsEach({value, onChange, people, disabled = false}: {value: number, onChange: (value: number) => void, people: number, disabled?: boolean}) {
+    return (
+        <label className="field">
+            <span className="label">Each person buys for</span>
+            <select value={value} disabled={disabled} onChange={e => onChange(Number(e.target.value))}>
+                {Array.from({length: limits.giftsEach}, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n} disabled={n >= people && n > 1}>{plural(n, 'person', 'people')}</option>
+                ))}
+            </select>
+            {value > 1 && value >= people && <span className="hint">With {plural(people, 'person', 'people')} in the draw, everyone can buy for at most {Math.max(people - 1, 1)}.</span>}
+        </label>
+    )
+}
+
 // (noon on Christmas Day and Boxing Day this year, as the page loaded)
 const christmas = `${new Date().getFullYear()}-12-25T12:00`
 const boxingDay = `${new Date().getFullYear()}-12-26T12:00`
@@ -446,6 +468,7 @@ function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionPro
     const {act, busy, error} = useAction(setGroup, signedOut)
     const [chosen, setChosen] = useState(() => new Set(draw.participantIds))
     const [visibleFrom, setVisibleFrom] = useState(() => toLocalInput(draw.resultsVisibleFrom))
+    const [giftsEach, setGiftsEach] = useState(draw.giftsEach)
     const personOf = (id: string) => group.people.find(p => p.id === id)
     const nameOf = (id: string) => personOf(id)?.name ?? 'Someone'
     const nobodyLooked = draw.revealedIds.length === 0
@@ -453,6 +476,8 @@ function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionPro
     // In a pending draw: everyone in the hat, and anyone in it who's since been taken out
     const choosable = group.people.filter(p => p.active || draw.participantIds.includes(p.id))
     const participantsChanged = pending && (chosen.size !== draw.participantIds.length || draw.participantIds.some(id => !chosen.has(id)))
+    const giftsChanged = pending && giftsEach !== draw.giftsEach
+    const changed = participantsChanged || giftsChanged
     const visibleChanged = fromLocalInput(visibleFrom) !== draw.resultsVisibleFrom
 
     return (
@@ -468,12 +493,18 @@ function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionPro
             {pending ? (
                 <>
                     <Participants people={choosable} chosen={chosen} onChange={setChosen} disabled={busy} />
-                    {participantsChanged && (
-                        <button type="button" className="button" disabled={busy || chosen.size < 2}
-                            onClick={() => act(() => client.updateDraw(draw.id, {participantIds: [...chosen]}))}>Save who's in it</button>
+                    <GiftsEach value={giftsEach} onChange={setGiftsEach} people={chosen.size} disabled={busy} />
+                    {changed && (
+                        <button type="button" className="button" disabled={busy || chosen.size < 2 || giftsEach >= chosen.size}
+                            onClick={() => act(() => client.updateDraw(draw.id, {
+                                participantIds: participantsChanged ? [...chosen] : undefined,
+                                giftsEach: giftsChanged ? giftsEach : undefined,
+                            }))}>
+                            Save changes
+                        </button>
                     )}
                     <div className="row">
-                        <button type="button" className="button button-primary" disabled={busy || participantsChanged}
+                        <button type="button" className="button button-primary" disabled={busy || changed}
                             onClick={() => act(() => client.runDraw(draw.id))}>Draw names</button>
                         <button type="button" className="button button-quiet" disabled={busy}
                             onClick={() => confirm(`Delete the ${draw.name} draw?`) && act(() => client.deleteDraw(draw.id))}>Delete</button>
@@ -481,7 +512,10 @@ function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionPro
                 </>
             ) : (
                 <>
-                    <p>{draw.revealedIds.length} of {plural(draw.participantIds.length, 'person', 'people')} have opened theirs.</p>
+                    <p>
+                        {draw.revealedIds.length} of {plural(draw.participantIds.length, 'person', 'people')} have opened theirs.
+                        {draw.giftsEach > 1 && ` Everyone's buying for ${draw.giftsEach}.`}
+                    </p>
                     <ul className="people">
                         {draw.participantIds.map(id => {
                             const looked = draw.revealedIds.includes(id)
@@ -511,7 +545,7 @@ function DrawCard({group, setGroup, client, signedOut, draw, colour}: SectionPro
                                 <button type="button" className="button button-quiet" disabled={busy}
                                     onClick={() => confirm(`Delete the ${draw.name} draw?`) && act(() => client.deleteDraw(draw.id))}>Delete</button>
                             </div>
-                            <p className="hint">Undo the draw to change who's in it.</p>
+                            <p className="hint">Undo the draw to change who's in it{draw.giftsEach > 1 ? ', or how many each buys for' : ''}.</p>
                         </>
                     ) : (
                         <p className="hint">Someone has opened theirs, so this draw can't be drawn again or deleted. If someone opened the wrong one, reset it.</p>

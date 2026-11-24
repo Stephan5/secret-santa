@@ -1,7 +1,7 @@
 import {Doodle} from './Doodle.tsx'
 import './Slip.css'
 
-// The name drawn, written on the back of a sheet of wrapping paper folded
+// The name drawn (or names, one a line), written on the back of a sheet of wrapping paper folded
 // in half and in half again, which unfolds (unless reduced motion is asked
 // for, or it's being shown again rather than for the first time): first
 // out to the right, then up, in the panel the name was picked in
@@ -14,18 +14,18 @@ import './Slip.css'
 // right first: its right side swings over (`slip-right`, printed both
 // sides), leaving the bottom half's pattern showing, the top half folded
 // down over it (`slip-flap`); then that swings up.
-export function Slip({forName, receiverName, unfold}: {forName: string, receiverName: string, unfold: boolean}) {
-    const size = {fontSize: `${nameSize(receiverName)}rem`}
+export function Slip({forName, receiverNames, unfold}: {forName: string, receiverNames: string[], unfold: boolean}) {
+    const size = {fontSize: `${namesSize(receiverNames)}rem`}
     return (
         <div className={unfold ? 'slip slip-unfold' : 'slip'}>
             <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheet">
                 <div className="slip-half slip-lower">
-                    <p className="slip-written slip-name" style={size}><Written name={receiverName} /></p>
+                    <p className="slip-written slip-name" style={size}><Names names={receiverNames} /></p>
                 </div>
                 <div className="slip-flap">
                     <div className="slip-half slip-upper">
-                        <p className="slip-written" style={size} aria-hidden="true"><Written name={receiverName} /></p>
+                        <p className="slip-written" style={size} aria-hidden="true"><Names names={receiverNames} /></p>
                     </div>
                     <div className="slip-outside" aria-hidden="true">
                         <div className="slip-print slip-left" />
@@ -37,6 +37,22 @@ export function Slip({forName, receiverName, unfold}: {forName: string, receiver
                 </div>
             </div>
         </div>
+    )
+}
+
+// One name as a run of text; more, one under another, read as a list
+// ("Ford and Trillian").
+function Names({names}: {names: string[]}) {
+    if (names.length === 1) return <Written name={names[0]} />
+    return (
+        <span className="slip-names">
+            {names.map((name, i) => (
+                <span key={name} className="slip-names-line">
+                    {i > 0 && <span className="visually-hidden">{i === names.length - 1 ? ' and ' : ', '}</span>}
+                    <Written name={name} />
+                </span>
+            ))}
+        </span>
     )
 }
 
@@ -62,4 +78,14 @@ function nameSize(name: string): number {
     const widest = Math.max(...words.map((word, i) => word.length * 0.45 + (i === words.length - 1 ? 1.1 : 0)))
     const size = Math.min(4.2, 14.5 / widest)
     return name.length > 24 ? Math.min(size, 2.6) : size
+}
+
+// …and for more than one, one a line: as big as the biggest that fits
+// across for all of them, and small enough that the lines, and the gaps
+// between names (0.3em, in Slip.css), fit down the sheet (12rem, less a
+// margin), allowing for a long one taking two.
+function namesSize(names: string[]): number {
+    if (names.length === 1) return nameSize(names[0])
+    const lines = names.reduce((count, name) => count + (name.length > 14 ? 2 : 1), 0)
+    return Math.min(...names.map(nameSize), 10.5 / (lines + 0.3 * (names.length - 1)))
 }

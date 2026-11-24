@@ -27,12 +27,15 @@ import {
 //   pk G#<group>   sk GROUP                 name, password hash, rules…
 //                  sk PERSON#<person>       name, active
 //                  sk DRAW#<draw>           name, status, participants…
-//                  sk PAIR#<draw>#<giver>   receiver, revealedAt, deviceHash
+//                  sk PAIR#<draw>#<giver>   receivers, revealedAt, deviceHash
 //   pk S#<token hash>  sk SESSION           admin sessions, expiring by TTL
 //   pk C#<key>         sk COUNTER           rate limit counters, likewise
 //
 // Nulls aren't stored: an attribute that's null in a record is absent from
 // its item (so "not revealed" is attribute_not_exists(revealedAt)).
+//
+// Items from before each could buy for more than one have no giftsEach on a
+// draw (one, then) and a single receiverId on a pairing, not receiverIds.
 
 type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number]
 
@@ -74,6 +77,9 @@ function updateFor(patch: Record<string, unknown>) {
         .filter(Boolean).join(' ')
     return {expression, names, values}
 }
+
+const receiversOf = (item: Record<string, unknown>) =>
+    (item.receiverIds as string[] | undefined) ?? [item.receiverId as string]
 
 async function conflictOnFailedCondition<T>(operation: Promise<T>): Promise<T> {
     try {
@@ -138,6 +144,7 @@ export class DynamoStore implements Store {
                 name: item.name as string,
                 status: item.status as DrawRecord['status'],
                 participantIds: item.participantIds as string[],
+                giftsEach: (item.giftsEach as number | undefined) ?? 1,
                 resultsVisibleFrom: (item.resultsVisibleFrom as string | undefined) ?? null,
                 createdAt: item.createdAt as string,
                 drawnAt: (item.drawnAt as string | undefined) ?? null,
@@ -145,7 +152,7 @@ export class DynamoStore implements Store {
             pairings: of('PAIR#').map(item => ({
                 drawId: item.drawId as string,
                 giverId: item.giverId as string,
-                receiverId: item.receiverId as string,
+                receiverIds: receiversOf(item),
                 revealedAt: (item.revealedAt as string | undefined) ?? null,
                 deviceHash: (item.deviceHash as string | undefined) ?? null,
             })),
@@ -211,7 +218,7 @@ export class DynamoStore implements Store {
     }
 
     async saveDraw(groupId: string, drawId: string, expectedStatus: DrawRecord['status'], drawnAt: string,
-        pairings: {giverId: string, receiverId: string}[]) {
+        pairings: {giverId: string, receiverIds: string[]}[]) {
         await conflictOnFailedCondition(this.db.send(new TransactWriteCommand({TransactItems: [
             {Update: {
                 TableName: this.table,
@@ -280,7 +287,7 @@ export class DynamoStore implements Store {
             return {outcome: 'revealed', pairing: {
                 drawId,
                 giverId,
-                receiverId: item.receiverId as string,
+                receiverIds: receiversOf(item),
                 revealedAt: item.revealedAt as string,
                 deviceHash: item.deviceHash as string,
             } satisfies PairingRecord}

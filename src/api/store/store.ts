@@ -32,6 +32,7 @@ export type DrawRecord = {
     name: string
     status: DrawStatus
     participantIds: string[]
+    giftsEach: number
     resultsVisibleFrom: string | null
     createdAt: string
     drawnAt: string | null
@@ -40,7 +41,7 @@ export type DrawRecord = {
 export type PairingRecord = {
     drawId: string
     giverId: string
-    receiverId: string
+    receiverIds: string[]
     revealedAt: string | null
     // A hash of the token of the browser it was revealed in
     deviceHash: string | null
@@ -83,12 +84,12 @@ export interface Store {
     createDraw(groupId: string, draw: DrawRecord): Promise<void>
     // Fails with ConflictError unless the draw has the expected status.
     updateDraw(groupId: string, drawId: string, expectedStatus: DrawStatus,
-        patch: Partial<Pick<DrawRecord, 'name' | 'participantIds' | 'resultsVisibleFrom'>>): Promise<void>
+        patch: Partial<Pick<DrawRecord, 'name' | 'participantIds' | 'giftsEach' | 'resultsVisibleFrom'>>): Promise<void>
     // Marks the draw drawn and writes its pairings, all at once, replacing
     // any it had. Fails with ConflictError unless the draw has the expected
     // status and nobody has revealed any pairing it's replacing.
     saveDraw(groupId: string, drawId: string, expectedStatus: DrawStatus, drawnAt: string,
-        pairings: {giverId: string, receiverId: string}[]): Promise<void>
+        pairings: {giverId: string, receiverIds: string[]}[]): Promise<void>
     // Puts a drawn draw back to pending, deleting its pairings. Fails with
     // ConflictError unless it's drawn and nobody has revealed.
     undoDraw(groupId: string, drawId: string, giverIds: string[]): Promise<void>
