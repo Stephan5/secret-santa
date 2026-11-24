@@ -7,7 +7,7 @@ export const limits = {
     peoplePerGroup: 50,
     drawsPerGroup: 100,
     // The most people each can buy for in one draw
-    giftsEach: 5,
+    giftsEach: 3,
     exclusions: 200,
     // The most previous draws the "don't repeat" rule can look back over
     avoidRecentDraws: 5,

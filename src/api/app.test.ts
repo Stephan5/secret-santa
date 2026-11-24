@@ -297,7 +297,7 @@ describe('API', () => {
             const {group} = setup()
             const {admin, as} = await group(['Mum', 'Dad', 'Sue'])
             const everyone = [as('Mum'), as('Dad'), as('Sue')]
-            for (const giftsEach of [0, 6, 1.5, '2']) {
+            for (const giftsEach of [0, 4, 1.5, '2']) {
                 assert.equal((await admin('POST', '/draws', {name: '2026', participantIds: everyone, giftsEach, resultsVisibleFrom: null})).status, 400)
             }
             // More than the others in the draw: said when drawing

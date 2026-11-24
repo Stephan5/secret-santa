@@ -308,7 +308,7 @@ describe('draw', () => {
 
         it('gives everyone that many different people, at any size', () => {
             const random = seeded(7)
-            for (const giftsEach of [2, 3, 5]) {
+            for (const giftsEach of [2, 3]) {
                 for (let n = giftsEach + 1; n <= 50; n += 3) {
                     for (const rules of [{}, {singleLoop: true}, {noSwaps: true}]) {
                         const drawInput = input(names(n), {giftsEach, ...rules})
