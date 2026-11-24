@@ -142,7 +142,7 @@ p.slip-for {
     font-size: 0.9rem;
     letter-spacing: 0.02em;
     text-align: center;
-    color: var(--muted);
+    color: var(--ink);
 }
 
 /* The names again, plainly, under the sheets */
