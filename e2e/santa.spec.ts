@@ -132,7 +132,6 @@ test("a shared device can open more than one name", async ({page, request}) => {
         await page.getByLabel('Who are you?').selectOption({label: name})
         await page.getByRole('button', {name: "Show me who I'm buying for"}).click()
         await page.getByRole('button', {name: 'Yes, show me'}).click()
-        await expect(page.locator('.slip-for')).toHaveText(`${name}, you're buying for`)
         await page.getByRole('button', {name: `Not ${name}? Choose another name`}).click()
     }
     expect(errors).toEqual([])

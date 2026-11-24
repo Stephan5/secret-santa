@@ -209,7 +209,7 @@ function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, 
                         </div>
                     </div>
                     <div className={layer('slip')} inert={off('slip')} role={shown ? 'status' : undefined} aria-live={shown ? 'polite' : undefined}>
-                        <Slip forName={shown?.person.name ?? longest(people)} receiverNames={shown?.receiverNames ?? longestFew(people, draw.giftsEach)} unfold={!!shown?.fresh} />
+                        <Slip receiverNames={shown?.receiverNames ?? longestFew(people, draw.giftsEach)} unfold={!!shown?.fresh} />
                     </div>
                 </div>
             </div>

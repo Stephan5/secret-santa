@@ -1,5 +1,4 @@
-import type {CSSProperties} from 'react'
-import {listOf} from '../format.ts'
+import {Fragment, type CSSProperties} from 'react'
 import {Doodle} from './Doodle.tsx'
 import './Slip.css'
 
@@ -7,12 +6,11 @@ import './Slip.css'
 // in half and in half again, which unfolds (unless reduced motion is asked
 // for, or it's being shown again rather than for the first time): first
 // out to the right, then up, in the panel the name was picked in
-// (GroupPage.tsx). Who it's for is above it; the name's handwritten large,
-// with a doodle beside it, across the middle of the sheet, over the across
-// fold, so each half of the sheet has its half of it. Under it, once it's
-// open, it's said again in plain type, in case the handwriting's hard to
-// read (and that's what screen readers get: the sheets are hidden from
-// them).
+// (GroupPage.tsx). The name's handwritten large, with a doodle beside it,
+// across the middle of the sheet, over the across fold, so each half of the
+// sheet has its half of it. Under it, once it's open, it's said again in
+// plain type, in case the handwriting's hard to read (and that's what
+// screen readers get: the sheets are hidden from them).
 //
 // Buying for more than one, each name has a smaller sheet of its own, each
 // with a different doodle, side by side where there's room, put down and
@@ -22,20 +20,29 @@ import './Slip.css'
 // right first: its right side swings over (`slip-right`, printed both
 // sides), leaving the bottom half's pattern showing, the top half folded
 // down over it (`slip-flap`); then that swings up.
-export function Slip({forName, receiverNames, unfold}: {forName: string, receiverNames: string[], unfold: boolean}) {
+export function Slip({receiverNames, unfold}: {receiverNames: string[], unfold: boolean}) {
     // (the plain line comes once the last sheet's open)
     const lastDelay = {'--last-delay': `${(receiverNames.length - 1) * sheetDelay}ms`} as CSSProperties
     return (
         <div className={unfold ? 'slip slip-unfold' : 'slip'} style={lastDelay}>
-            <p className="slip-for">{forName}, you're buying for</p>
             <div className="slip-sheets" aria-hidden="true">
                 {receiverNames.map((name, i) => (
                     <Sheet key={name} name={name} among={receiverNames} index={i} />
                 ))}
             </div>
-            <p className="slip-plain">You're buying for <strong className="slip-name">{listOf(receiverNames)}</strong>.</p>
+            <p className="slip-plain">You're buying for <span className="slip-name"><Listed names={receiverNames} /></span>.</p>
         </div>
     )
+}
+
+// "Gran, Sue and Dad", just the names in bold.
+function Listed({names}: {names: string[]}) {
+    return names.map((name, i) => (
+        <Fragment key={name}>
+            {i > 0 && (i === names.length - 1 ? ' and ' : ', ')}
+            <strong>{name}</strong>
+        </Fragment>
+    ))
 }
 
 // Each sheet's size, in rem, by how many there are: as wide as fits that
