@@ -8,7 +8,7 @@ import './Slip.css'
 // out to the right, then up, in the panel the name was picked in
 // (GroupPage.tsx). The name's handwritten large, with a doodle beside it,
 // across the middle of the sheet, over the across fold, so each half of the
-// sheet has its half of it. Under it, once it's open, it's said again in
+// sheet has its half of it. Above it, once it's open, it's said again in
 // plain type, in case the handwriting's hard to read (and that's what
 // screen readers get: the sheets are hidden from them).
 //
@@ -25,12 +25,12 @@ export function Slip({receiverNames, unfold}: {receiverNames: string[], unfold: 
     const lastDelay = {'--last-delay': `${(receiverNames.length - 1) * sheetDelay}ms`} as CSSProperties
     return (
         <div className={unfold ? 'slip slip-unfold' : 'slip'} style={lastDelay}>
+            <p className="slip-plain">You're buying for <span className="slip-name"><Listed names={receiverNames} /></span>.</p>
             <div className="slip-sheets" aria-hidden="true">
                 {receiverNames.map((name, i) => (
                     <Sheet key={name} name={name} among={receiverNames} index={i} />
                 ))}
             </div>
-            <p className="slip-plain">You're buying for <span className="slip-name"><Listed names={receiverNames} /></span>.</p>
         </div>
     )
 }

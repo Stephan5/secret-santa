@@ -135,9 +135,9 @@
     border-radius: 0 0 0.2rem 0;
 }
 
-/* The names again, plainly, under the sheets */
+/* The names again, plainly, above the sheets */
 p.slip-plain {
-    margin: 1.4rem 0 0;
+    margin: 0 0 1.1rem;
     text-align: center;
     color: var(--ink);
 }
