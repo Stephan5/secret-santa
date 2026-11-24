@@ -1,7 +1,7 @@
 /* The name drawn, on the back of a sheet of wrapping paper folded in half
    and in half again (Slip.tsx): its printed side out (wrapping-paper.svg),
    its plain, gridded back in. It's put down folded small, then opened out
-   to the right, then up. */
+   to the right, then up, then said again in plain type. */
 .slip {
     --half: 6rem;
     --print: url('../wrapping-paper.svg') 0 0 / 6rem 6rem, #17463a;
@@ -145,6 +145,13 @@ p.slip-for {
     color: var(--muted);
 }
 
+/* The names again, plainly, under the sheets */
+p.slip-plain {
+    margin: 1.4rem 0 0;
+    text-align: center;
+    color: var(--ink);
+}
+
 /* The name, across the whole sheet: each half holds a sheet-sized box
    with it in the middle, the top half showing its top, the bottom its
    bottom. (Its size is set in Slip.tsx, by how long it is.) */
@@ -211,6 +218,17 @@ p.slip-for {
 
     .slip-unfold .slip-flap {
         animation: slip-open-up 850ms cubic-bezier(0.45, 0, 0.2, 1) calc(var(--delay, 0ms) + 1450ms) both;
+    }
+
+    .slip-unfold .slip-plain {
+        animation: slip-plain-in 400ms ease-out calc(var(--last-delay, 0ms) + 2300ms) both;
+    }
+}
+
+@keyframes slip-plain-in {
+    from {
+        opacity: 0;
+        translate: 0 0.3rem;
     }
 }
 

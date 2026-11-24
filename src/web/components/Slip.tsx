@@ -9,28 +9,31 @@ import './Slip.css'
 // out to the right, then up, in the panel the name was picked in
 // (GroupPage.tsx). Who it's for is above it; the name's handwritten large,
 // with a doodle beside it, across the middle of the sheet, over the across
-// fold, so each half of the sheet has its half of it (the top one hidden
-// from screen readers, so it's read once).
+// fold, so each half of the sheet has its half of it. Under it, once it's
+// open, it's said again in plain type, in case the handwriting's hard to
+// read (and that's what screen readers get: the sheets are hidden from
+// them).
 //
 // Buying for more than one, each name has a smaller sheet of its own, each
 // with a different doodle, side by side where there's room, put down and
-// opened one after another. (Screen readers get them as one list.)
+// opened one after another.
 //
 // Folded, the sheet was folded top down, then right over left. So it opens
 // right first: its right side swings over (`slip-right`, printed both
 // sides), leaving the bottom half's pattern showing, the top half folded
 // down over it (`slip-flap`); then that swings up.
 export function Slip({forName, receiverNames, unfold}: {forName: string, receiverNames: string[], unfold: boolean}) {
-    const several = receiverNames.length > 1
+    // (the plain line comes once the last sheet's open)
+    const lastDelay = {'--last-delay': `${(receiverNames.length - 1) * sheetDelay}ms`} as CSSProperties
     return (
-        <div className={unfold ? 'slip slip-unfold' : 'slip'}>
+        <div className={unfold ? 'slip slip-unfold' : 'slip'} style={lastDelay}>
             <p className="slip-for">{forName}, you're buying for</p>
-            {several && <p className="slip-name visually-hidden">{listOf(receiverNames)}</p>}
-            <div className="slip-sheets">
+            <div className="slip-sheets" aria-hidden="true">
                 {receiverNames.map((name, i) => (
-                    <Sheet key={name} name={name} among={receiverNames} index={i} hidden={several} />
+                    <Sheet key={name} name={name} among={receiverNames} index={i} />
                 ))}
             </div>
+            <p className="slip-plain">You're buying for <strong className="slip-name">{listOf(receiverNames)}</strong>.</p>
         </div>
     )
 }
@@ -42,28 +45,30 @@ const sizes: Record<number, {width: number, half: number}> = {
     2: {width: 13, half: 4.6},
     3: {width: 10.5, half: 3.9},
 }
-// (each put down at a slightly different angle)
+// (each put down at a slightly different angle, and this long after the
+// one before)
 const tilts = [-1.5, 1.4, -0.5]
+const sheetDelay = 450
 
-function Sheet({name, among, index, hidden}: {name: string, among: string[], index: number, hidden: boolean}) {
+function Sheet({name, among, index}: {name: string, among: string[], index: number}) {
     const {width, half} = sizes[among.length] ?? sizes[3]
     const sheet = {
         '--width': `${width}rem`,
         '--half': `${half}rem`,
         '--tilt': `${tilts[index % tilts.length]}deg`,
-        '--delay': `${index * 450}ms`,
+        '--delay': `${index * sheetDelay}ms`,
     } as CSSProperties
     const size = {fontSize: `${nameSize(name, width, half)}rem`}
     return (
-        <div className="slip-sheet" style={sheet} aria-hidden={hidden || undefined}>
+        <div className="slip-sheet" style={sheet}>
             <div className="slip-half slip-lower">
-                <p className={hidden ? 'slip-written' : 'slip-written slip-name'} style={size}><Written name={name} among={among} /></p>
+                <p className="slip-written" style={size}><Written name={name} among={among} /></p>
             </div>
             <div className="slip-flap">
                 <div className="slip-half slip-upper">
-                    <p className="slip-written" style={size} aria-hidden="true"><Written name={name} among={among} /></p>
+                    <p className="slip-written" style={size}><Written name={name} among={among} /></p>
                 </div>
-                <div className="slip-outside" aria-hidden="true">
+                <div className="slip-outside">
                     <div className="slip-print slip-left" />
                     <div className="slip-right">
                         <div className="slip-print slip-right-front" />
