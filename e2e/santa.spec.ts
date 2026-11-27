@@ -72,6 +72,29 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
     expect(errors).toEqual([])
 })
 
+test('everyone can buy for more than one person', async ({page, browser, request}) => {
+    const {group} = await makeGroup(request, ['Mum', 'Dad', 'Bill', 'Gran'])
+    const errors = trackErrors(page)
+    await signIn(page, group.id)
+    await page.getByLabel('Each person buys for').selectOption({label: '2 people'})
+    await page.getByRole('button', {name: 'Create draw'}).click()
+    await page.getByRole('button', {name: 'Draw names'}).click()
+    await expect(page.getByText("0 of 4 people have opened theirs. Everyone's buying for 2.")).toBeVisible()
+
+    const bought = new Map<string, number>()
+    for (const name of ['Mum', 'Dad', 'Bill', 'Gran']) {
+        const opened = await openName(browser, group.id, name)
+        const receivers = opened.receiver.split(' and ')
+        expect(receivers).toHaveLength(2)
+        expect(receivers).not.toContain(name)
+        for (const receiver of receivers) bought.set(receiver, (bought.get(receiver) ?? 0) + 1)
+        expect(opened.errors).toEqual([])
+        await opened.context.close()
+    }
+    expect([...bought.values()]).toEqual([2, 2, 2, 2])
+    expect(errors).toEqual([])
+})
+
 test("a name opened on one phone can't be opened on another, until the organiser resets it", async ({page, browser, request}) => {
     const {group} = await makeDrawnGroup(request, ['Mum', 'Dad', 'Sue'])
     const mum = await openName(browser, group.id, 'Mum')
@@ -109,7 +132,6 @@ test("a shared device can open more than one name", async ({page, request}) => {
         await page.getByLabel('Who are you?').selectOption({label: name})
         await page.getByRole('button', {name: "Show me who I'm buying for"}).click()
         await page.getByRole('button', {name: 'Yes, show me'}).click()
-        await expect(page.locator('.slip-for')).toHaveText(`${name}, you're buying for`)
         await page.getByRole('button', {name: `Not ${name}? Choose another name`}).click()
     }
     expect(errors).toEqual([])

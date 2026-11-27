@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {randomUUID} from 'node:crypto'
 import {after, before, describe, it} from 'node:test'
-import {CreateTableCommand, DeleteTableCommand, DynamoDBClient} from '@aws-sdk/client-dynamodb'
+import {CreateTableCommand, DeleteTableCommand, DynamoDBClient, PutItemCommand} from '@aws-sdk/client-dynamodb'
 import {defaultRules} from '../../shared/api.ts'
 import {DynamoStore} from './dynamo.ts'
 import {MemoryStore} from './memory.ts'
@@ -29,20 +29,21 @@ const pending = (id: string, participantIds: string[]) => ({
     name: '2026',
     status: 'pending' as const,
     participantIds,
+    giftsEach: 1,
     resultsVisibleFrom: null,
     createdAt: '2026-11-02T00:00:00.000Z',
     drawnAt: null,
 })
 
 const loop = [
-    {giverId: 'a', receiverId: 'b'},
-    {giverId: 'b', receiverId: 'c'},
-    {giverId: 'c', receiverId: 'a'},
+    {giverId: 'a', receiverIds: ['b']},
+    {giverId: 'b', receiverIds: ['c']},
+    {giverId: 'c', receiverIds: ['a']},
 ]
 const otherLoop = [
-    {giverId: 'a', receiverId: 'c'},
-    {giverId: 'c', receiverId: 'b'},
-    {giverId: 'b', receiverId: 'a'},
+    {giverId: 'a', receiverIds: ['c']},
+    {giverId: 'c', receiverIds: ['b']},
+    {giverId: 'b', receiverIds: ['a']},
 ]
 
 function contract(label: string, makeStore: () => Store) {
@@ -135,11 +136,30 @@ function contract(label: string, makeStore: () => Store) {
             await assert.rejects(store.saveDraw(groupId, 'd1', 'pending', '2026-11-04T00:00:00.000Z', otherLoop), ConflictError)
         })
 
+        it('keeps more than one receiver for each giver', async () => {
+            const g = group()
+            await store.createGroup(g, [person('a'), person('b'), person('c')])
+            await store.createDraw(g.id, {...pending('d1', ['a', 'b', 'c']), giftsEach: 2})
+            const both = [
+                {giverId: 'a', receiverIds: ['b', 'c']},
+                {giverId: 'b', receiverIds: ['c', 'a']},
+                {giverId: 'c', receiverIds: ['a', 'b']},
+            ]
+            await store.saveDraw(g.id, 'd1', 'pending', '2026-11-03T00:00:00.000Z', both)
+            const loaded = (await store.getGroup(g.id))!
+            assert.equal(loaded.draws[0].giftsEach, 2)
+            assert.deepEqual(
+                loaded.pairings.toSorted((x, y) => x.giverId.localeCompare(y.giverId)),
+                both.toSorted((x, y) => x.giverId.localeCompare(y.giverId)).map(p => ({drawId: 'd1', ...p, revealedAt: null, deviceHash: null})))
+            const revealed = await store.reveal(g.id, 'd1', 'b', 'device-1', '2026-11-05T00:00:00.000Z')
+            assert.deepEqual(revealed.outcome === 'revealed' && revealed.pairing.receiverIds, ['c', 'a'])
+        })
+
         it('redraws only while nobody has looked, all or nothing', async () => {
             const groupId = await drawnGroup()
             await store.saveDraw(groupId, 'd1', 'drawn', '2026-11-04T00:00:00.000Z', otherLoop)
             const receiverOf = async (giverId: string) =>
-                (await store.getGroup(groupId))!.pairings.find(p => p.giverId === giverId)!.receiverId
+                (await store.getGroup(groupId))!.pairings.find(p => p.giverId === giverId)!.receiverIds[0]
             assert.equal(await receiverOf('a'), 'c')
 
             await store.reveal(groupId, 'd1', 'b', 'device-1', '2026-11-05T00:00:00.000Z')
@@ -153,7 +173,7 @@ function contract(label: string, makeStore: () => Store) {
             const groupId = await drawnGroup()
             const first = await store.reveal(groupId, 'd1', 'a', 'device-1', '2026-11-05T00:00:00.000Z')
             assert.deepEqual(first, {outcome: 'revealed', pairing: {
-                drawId: 'd1', giverId: 'a', receiverId: 'b', revealedAt: '2026-11-05T00:00:00.000Z', deviceHash: 'device-1',
+                drawId: 'd1', giverId: 'a', receiverIds: ['b'], revealedAt: '2026-11-05T00:00:00.000Z', deviceHash: 'device-1',
             }})
             // Again in the same browser: the same, still revealed when it first was
             assert.deepEqual(await store.reveal(groupId, 'd1', 'a', 'device-1', '2026-11-06T00:00:00.000Z'), first)
@@ -175,7 +195,7 @@ function contract(label: string, makeStore: () => Store) {
             await store.reveal(groupId, 'd1', 'a', 'device-1', '2026-11-05T00:00:00.000Z')
             await store.resetReveal(groupId, 'd1', 'a')
             const pairing = (await store.getGroup(groupId))!.pairings.find(p => p.giverId === 'a')
-            assert.deepEqual(pairing, {drawId: 'd1', giverId: 'a', receiverId: 'b', revealedAt: null, deviceHash: null})
+            assert.deepEqual(pairing, {drawId: 'd1', giverId: 'a', receiverIds: ['b'], revealedAt: null, deviceHash: null})
             assert.equal((await store.reveal(groupId, 'd1', 'a', 'device-2', '2026-11-06T00:00:00.000Z')).outcome, 'revealed')
             await assert.rejects(store.resetReveal(groupId, 'd1', 'nobody'), ConflictError)
         })
@@ -257,4 +277,23 @@ describe('DynamoStore', {skip: endpoint ? false : 'DYNAMODB_ENDPOINT not set'}, 
         client.destroy()
     })
     contract('against DynamoDB Local', () => new DynamoStore(table, client))
+
+    it('reads draws and pairings saved before each could buy for more than one', async () => {
+        const store = new DynamoStore(table, client)
+        const g = group()
+        await store.createGroup(g, [person('a'), person('b')])
+        const pk = {S: `G#${g.id}`}
+        await client.send(new PutItemCommand({TableName: table, Item: {
+            pk, sk: {S: 'DRAW#d1'}, id: {S: 'd1'}, name: {S: '2025'}, status: {S: 'drawn'},
+            participantIds: {L: [{S: 'a'}, {S: 'b'}]}, createdAt: {S: '2025-11-02T00:00:00.000Z'}, drawnAt: {S: '2025-11-03T00:00:00.000Z'},
+        }}))
+        await client.send(new PutItemCommand({TableName: table, Item: {
+            pk, sk: {S: 'PAIR#d1#a'}, drawId: {S: 'd1'}, giverId: {S: 'a'}, receiverId: {S: 'b'},
+        }}))
+        const loaded = (await store.getGroup(g.id))!
+        assert.equal(loaded.draws[0].giftsEach, 1)
+        assert.deepEqual(loaded.pairings[0].receiverIds, ['b'])
+        const revealed = await store.reveal(g.id, 'd1', 'a', 'device-1', '2026-11-05T00:00:00.000Z')
+        assert.deepEqual(revealed.outcome === 'revealed' && revealed.pairing.receiverIds, ['b'])
+    })
 })

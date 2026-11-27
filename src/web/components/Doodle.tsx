@@ -1,7 +1,8 @@
 // A little doodle beside the name drawn, as if drawn in the same pen: a
 // Christmas tree, a Santa hat or a present, chosen by the name so it's the
-// same one each time that name's shown. Each is an ink outline over a wash
-// of colour that doesn't quite line up with it. (Styled in Slip.css.)
+// same one each time that name's shown (unless it's beside another name
+// with the same one). Each is an ink outline over a wash of colour that
+// doesn't quite line up with it. (Styled in Slip.css.)
 
 const ink = {fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round'} as const
 
@@ -46,9 +47,28 @@ function Present() {
 
 const doodles = [Tree, Hat, Present]
 
-export function Doodle({name}: {name: string}) {
+// Which doodle goes with a name: the same each time it's shown.
+function doodleOf(name: string): number {
     let hash = 0
     for (const char of name) hash = (hash * 31 + char.codePointAt(0)!) >>> 0
-    const Chosen = doodles[hash % doodles.length]
+    return hash % doodles.length
+}
+
+// For several names shown together, a different doodle each (while there
+// are doodles to go round): each its own, unless one before it has that,
+// then the next one free.
+function doodlesFor(names: string[]): number[] {
+    const taken: number[] = []
+    for (const name of names) {
+        let kind = doodleOf(name)
+        for (let tries = 0; tries < doodles.length && taken.includes(kind); tries++) kind = (kind + 1) % doodles.length
+        taken.push(kind)
+    }
+    return taken
+}
+
+// among: all the names shown together, this one with them.
+export function Doodle({name, among = [name]}: {name: string, among?: string[]}) {
+    const Chosen = doodles[doodlesFor(among)[among.indexOf(name)] ?? doodleOf(name)]
     return <Chosen />
 }

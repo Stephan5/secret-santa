@@ -22,6 +22,7 @@ export function groupView({group, people, draws, pairings}: GroupAggregate, now:
                     name: draw.name,
                     status: draw.status,
                     participantIds: draw.participantIds,
+                    giftsEach: draw.giftsEach,
                     revealedIds: draw.participantIds.filter(id => mine.some(p => p.giverId === id && p.revealedAt)),
                     resultsVisibleFrom: draw.resultsVisibleFrom,
                     createdAt: draw.createdAt,
@@ -29,7 +30,7 @@ export function groupView({group, people, draws, pairings}: GroupAggregate, now:
                     results: visible
                         ? draw.participantIds.flatMap(giverId => {
                             const pairing = mine.find(p => p.giverId === giverId)
-                            return pairing ? [{giverId, receiverId: pairing.receiverId}] : []
+                            return pairing ? [{giverId, receiverIds: pairing.receiverIds}] : []
                         })
                         : null,
                 }
@@ -47,11 +48,16 @@ const ruleLabels: Record<RuleName, string> = {
     singleLoop: 'the "One big loop" rule',
 }
 
-export function impossibleMessage(blockers: RuleName[]): string {
+// fewerGifts: with more than one each, the most each could buy for with the
+// rules as they are, if any.
+export function impossibleMessage(blockers: RuleName[], fewerGifts: number | null = null): string {
+    const fewer = fewerGifts === null ? null : `with each buying for ${fewerGifts === 1 ? 'one' : fewerGifts}`
     if (blockers.length === 0) {
-        return "No draw fits these rules, and dropping any one of them wouldn't be enough. Try loosening a couple."
+        return fewer
+            ? `No draw fits these rules. It would work ${fewer}.`
+            : "No draw fits these rules, and dropping any one of them wouldn't be enough. Try loosening a couple."
     }
     const labels = blockers.map(rule => ruleLabels[rule])
     const list = labels.length === 1 ? labels[0] : `${labels.slice(0, -1).join(', ')} or ${labels.at(-1)}`
-    return `No draw fits these rules. It would work without ${list}.`
+    return `No draw fits these rules. It would work without ${list}${fewer ? `, or ${fewer}` : ''}.`
 }

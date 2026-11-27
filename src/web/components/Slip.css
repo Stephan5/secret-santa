@@ -1,24 +1,37 @@
 /* The name drawn, on the back of a sheet of wrapping paper folded in half
    and in half again (Slip.tsx): its printed side out (wrapping-paper.svg),
    its plain, gridded back in. It's put down folded small, then opened out
-   to the right, then up. */
+   to the right, then up, then said again in plain type. */
 .slip {
     --half: 6rem;
     --print: url('../wrapping-paper.svg') 0 0 / 6rem 6rem, #17463a;
-    /* (a column, so the space under who it's for and the room above the
-       sheet don't collapse into one) */
+    /* (a column, so the room above the sheet and the margins around it
+       don't collapse into one) */
     display: flex;
     flex-direction: column;
 }
 
+/* The sheets, more than one when buying for more than one: side by side
+   where there's room. */
+.slip-sheets {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1.1rem 1rem;
+}
+
 /* (the sheet's height is the bottom half's, with room above it for the
-   top half to open into) */
+   top half to open into. Its size, tilt and when it's opened are set in
+   Slip.tsx, by how many there are; it's a container so its print can be
+   lined up across its fold, however wide it is.) */
 .slip-sheet {
     position: relative;
-    width: min(100%, 17rem);
-    margin: var(--half) auto 0;
+    container-type: inline-size;
+    width: min(100%, var(--width, 17rem));
+    margin-top: var(--half);
     perspective: 32rem;
-    rotate: -1.5deg;
+    rotate: var(--tilt, -1.5deg);
     filter: drop-shadow(0 0.8rem 1.2rem rgb(0 0 0 / 0.55));
 }
 
@@ -112,7 +125,7 @@
 
 /* (the print carrying on across the fold from the left half) */
 .slip-right-front {
-    background-position: calc(-1 * min(100vw - 2rem, 17rem) / 2) 0, 0 0;
+    background-position: -50cqw 0, 0 0;
     border-radius: 0 0 0.2rem 0;
 }
 
@@ -122,14 +135,11 @@
     border-radius: 0 0 0.2rem 0;
 }
 
-/* Who it's for, above the sheet */
-p.slip-for {
+/* The names again, plainly, above the sheets */
+p.slip-plain {
     margin: 0 0 1.1rem;
-    font-family: var(--mono);
-    font-size: 0.9rem;
-    letter-spacing: 0.02em;
     text-align: center;
-    color: var(--muted);
+    color: var(--ink);
 }
 
 /* The name, across the whole sheet: each half holds a sheet-sized box
@@ -181,23 +191,34 @@ p.slip-for {
 }
 
 /* Unfolding: put down (0–0.45s), opened out to the right (0.6–1.3s), then
-   up (1.45–2.3s). Until it's opened right, the bottom half's right side
+   up (1.45–2.3s); each sheet after the first that much later (--delay). Until it's opened right, the bottom half's right side
    is folded under (so hidden). */
 @media (prefers-reduced-motion: no-preference) {
     .slip-unfold .slip-sheet {
-        animation: slip-arrive 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+        animation: slip-arrive 450ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
     }
 
     .slip-unfold .slip-right {
-        animation: slip-open-right 700ms cubic-bezier(0.45, 0, 0.2, 1) 600ms both;
+        animation: slip-open-right 700ms cubic-bezier(0.45, 0, 0.2, 1) calc(var(--delay, 0ms) + 600ms) both;
     }
 
     .slip-unfold .slip-lower {
-        animation: slip-folded-under 1300ms step-end both;
+        animation: slip-folded-under 1300ms step-end var(--delay, 0ms) both;
     }
 
     .slip-unfold .slip-flap {
-        animation: slip-open-up 850ms cubic-bezier(0.45, 0, 0.2, 1) 1450ms both;
+        animation: slip-open-up 850ms cubic-bezier(0.45, 0, 0.2, 1) calc(var(--delay, 0ms) + 1450ms) both;
+    }
+
+    .slip-unfold .slip-plain {
+        animation: slip-plain-in 400ms ease-out calc(var(--last-delay, 0ms) + 2300ms) both;
+    }
+}
+
+@keyframes slip-plain-in {
+    from {
+        opacity: 0;
+        translate: 0 0.3rem;
     }
 }
 

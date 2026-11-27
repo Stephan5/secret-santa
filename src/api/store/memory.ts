@@ -98,7 +98,7 @@ export class MemoryStore implements Store {
     }
 
     async saveDraw(groupId: string, drawId: string, expectedStatus: DrawRecord['status'], drawnAt: string,
-        pairings: {giverId: string, receiverId: string}[]) {
+        pairings: {giverId: string, receiverIds: string[]}[]) {
         const draw = this.draw(groupId, drawId)
         if (draw.status !== expectedStatus) throw new ConflictError(`draw is ${draw.status}`)
         const replacing = this.pairingsOf(groupId, drawId)
