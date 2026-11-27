@@ -345,7 +345,7 @@ export function createApp(options: AppOptions): App {
             const result = await store.reveal(aggregate.group.id, found.id, person.id, sha256(deviceToken), at.toISOString())
             if (result.outcome === 'elsewhere') {
                 throw new HttpError(409, 'already-revealed',
-                    `Someone's already opened ${person.name}'s on another device. If that wasn't ${person.name}, ask the organiser to reset it.`)
+                    `Someone's already opened ${person.name}'s on another device. If that wasn't ${person.name}, ask the group organiser to reset it.`)
             }
             if (result.outcome === 'missing') throw notFound("That person isn't in this draw.")
             const receiver = findPerson(aggregate, result.pairing.receiverId)

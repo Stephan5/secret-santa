@@ -1,6 +1,20 @@
 import {expect, test} from '@playwright/test'
 import {makeDrawnGroup, makeGroup, openName, signIn, trackErrors} from './helpers.ts'
 
+test('while the names are still to be drawn, everyone is asked whether they have another lot to sort', async ({page, request}) => {
+    const made = await makeGroup(request, ['Mum', 'Dad'])
+    await page.goto(`/g/${made.group.id}`)
+    await expect(page.getByText("Names haven't been drawn yet.", {exact: false})).toBeVisible()
+    await expect(page.getByRole('heading', {name: 'While you wait…'})).toBeVisible()
+    await expect(page.getByRole('link', {name: 'Start your own Secret Santa'})).toHaveAttribute('href', '/new')
+
+    // ...but not the organiser
+    await signIn(page, made.group.id)
+    await page.goto(`/g/${made.group.id}`)
+    await expect(page.getByText("Names haven't been drawn yet.", {exact: false})).toBeVisible()
+    await expect(page.getByRole('link', {name: 'Start your own Secret Santa'})).toHaveCount(0)
+})
+
 test('an organiser sets up a Secret Santa, and everyone opens their name', async ({page, browser}) => {
     const errors = trackErrors(page)
 
@@ -39,6 +53,8 @@ test('an organiser sets up a Secret Santa, and everyone opens their name', async
         const opened = await openName(browser, groupId, name)
         receivers.set(name, opened.receiver)
         expect(opened.errors).toEqual([])
+        // ...and is asked whether they've another lot to sort
+        await expect(opened.page.getByRole('link', {name: 'Start your own Secret Santa'})).toHaveAttribute('href', '/new')
         // Coming back, it's still there, without choosing again
         await opened.page.reload()
         await expect(opened.page.locator('.slip-name')).toHaveText(opened.receiver)
@@ -106,6 +122,10 @@ test('everyone sees the full draw results from the results date', async ({page, 
     const pairings = page.locator('.pairings li')
     await expect(pairings).toHaveCount(3)
     await expect(page.getByRole('heading', {name: 'Full draw results'})).toBeVisible()
+    // It's over: no more opening names, until the group organiser starts the next draw
+    await expect(page.getByRole('heading', {name: "That's 2026 done"})).toBeVisible()
+    await expect(page.getByLabel('Who are you?')).toHaveCount(0)
+    await expect(page.getByRole('link', {name: 'Start your own Secret Santa'})).toBeVisible()
     expect(errors).toEqual([])
 })
 

@@ -205,6 +205,11 @@ main.column {
     text-align: center;
 }
 
+/* (a draw whose results are out, until the next one) */
+.finished {
+    gap: 0.5rem;
+}
+
 /* The panel for finding out who you're buying for: the same size and shape
    whether it's asking who you are, checking, or showing the slip (Slip.tsx).
    Each step is laid in the same place, all but the one it's on hidden, so
@@ -263,6 +268,27 @@ main.column {
 
 .reveal-layer-off {
     visibility: hidden;
+}
+
+/* (after someone's opened their name: a nudge to start their own) */
+.start-your-own {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.start-your-own h2 {
+    font-size: 1.3rem;
+}
+
+.start-your-own p {
+    color: var(--muted);
+    text-wrap: pretty;
+}
+
+.start-your-own .button {
+    align-self: flex-start;
 }
 
 .confirm-question {

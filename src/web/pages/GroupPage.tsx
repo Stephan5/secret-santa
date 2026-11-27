@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
 import type {Draw, Group, Person} from '../../shared/api.ts'
-import {api, ApiFailure} from '../api.ts'
+import {adminSession, api, ApiFailure} from '../api.ts'
 import {ErrorNote, Loading, Page} from '../components/Page.tsx'
 import {Slip} from '../components/Slip.tsx'
 import {deviceToken, forgetReveal, rememberReveal, revealedHere} from '../device.ts'
@@ -15,6 +15,8 @@ import {NotFound} from './Home.tsx'
 export function GroupPage({groupId}: {groupId: string}) {
     const [group, setGroup] = useState<Group | null>(null)
     const [failure, setFailure] = useState<ApiFailure | null>(null)
+    // (whether someone's name is showing here, to suggest starting their own)
+    const [opened, setOpened] = useState(false)
 
     const reload = useCallback(() => {
         api.getGroup(groupId).then(setGroup, error => setFailure(error as ApiFailure))
@@ -30,6 +32,10 @@ export function GroupPage({groupId}: {groupId: string}) {
     // has nothing in it for anyone)
     const earlier = before.filter(draw => draw.status === 'drawn')
     const nameOf = (id: string) => group.people.find(p => p.id === id)?.name ?? 'Someone'
+    const waiting = !current || current.status === 'pending'
+    // (once its results are out, the exchange is over: until the next draw,
+    // the page looks back on it)
+    const finished = current?.status === 'drawn' && current.results !== null
 
     return (
         <Page title={group.name}>
@@ -37,8 +43,8 @@ export function GroupPage({groupId}: {groupId: string}) {
                 <h1>{group.name}</h1>
             </header>
 
-            {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the organiser has drawn them.</p>}
-            {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} nameOf={nameOf} />}
+            {!current && <p className="card card-gold"><Snowdrift ledge="not-drawn" />Names haven't been drawn yet. Check back once the group organiser has drawn them.</p>}
+            {current && <CurrentDraw key={current.id} group={group} draw={current} onRevealed={reload} onShown={setOpened} nameOf={nameOf} />}
 
             {earlier.length > 0 && (
                 <section className="earlier">
@@ -54,26 +60,44 @@ export function GroupPage({groupId}: {groupId: string}) {
             <p className="organiser-link">
                 <Link href={paths.admin(group.id)}>Manage this Secret Santa</Link>
             </p>
+
+            {(waiting || opened || finished) && !adminSession.get(group.id) && (
+                <StartYourOwn heading={waiting ? 'While you wait…' : 'Got another lot to sort?'} />
+            )}
         </Page>
     )
 }
 
-function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Draw, onRevealed: () => void, nameOf: (id: string) => string}) {
+function CurrentDraw({group, draw, onRevealed, onShown, nameOf}: {group: Group, draw: Draw, onRevealed: () => void, onShown: (shown: boolean) => void, nameOf: (id: string) => string}) {
     if (draw.status === 'pending') {
         return (
             <section className="card card-gold">
                 <Snowdrift ledge="not-drawn" />
                 <h2 className="draw-title">{draw.name}</h2>
-                <p>Names haven't been drawn yet. Check back once the organiser has drawn them.</p>
+                <p>Names haven't been drawn yet. Check back once the group organiser has drawn them.</p>
                 <p className="muted">In the hat: {draw.participantIds.map(nameOf).join(', ')}</p>
             </section>
+        )
+    }
+    if (draw.results) {
+        return (
+            <>
+                <section className="card card-gold stack finished">
+                    <h2>That's {draw.name} done</h2>
+                    <p>
+                        When it's time for the next one, the group organiser can start a new draw, and it'll show up
+                        here, at this same link. Keep hold of it.
+                    </p>
+                </section>
+                <Results draw={draw} nameOf={nameOf} />
+            </>
         )
     }
     const looked = draw.revealedIds.length
     const people = draw.participantIds.map(id => group.people.find(p => p.id === id)!).filter(Boolean)
     return (
         <>
-            <Reveal groupId={group.id} draw={draw} people={people} onRevealed={onRevealed} />
+            <Reveal groupId={group.id} draw={draw} people={people} onRevealed={onRevealed} onShown={onShown} />
             <p className="progress muted">{looked} of {people.length} have opened theirs.</p>
             <Results draw={draw} nameOf={nameOf} />
         </>
@@ -82,7 +106,7 @@ function CurrentDraw({group, draw, onRevealed, nameOf}: {group: Group, draw: Dra
 
 type Shown = {person: Person, receiverName: string, fresh: boolean}
 
-function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Draw, people: Person[], onRevealed: () => void}) {
+function Reveal({groupId, draw, people, onRevealed, onShown}: {groupId: string, draw: Draw, people: Person[], onRevealed: () => void, onShown: (shown: boolean) => void}) {
     const [chosen, setChosen] = useState('')
     const [confirming, setConfirming] = useState(false)
     const [busy, setBusy] = useState(false)
@@ -92,6 +116,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
     const [checkingHere, setCheckingHere] = useState(() => people.some(p => p.id === revealedHere(draw.id).at(-1)))
     const {remembered} = deviceToken()
     const here = revealedHere(draw.id)
+    useEffect(() => onShown(shown !== null), [shown, onShown])
 
     // If this browser has opened a name in this draw before, show it again
     // (once, on arriving: not each time the group reloads).
@@ -169,7 +194,7 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
                         </button>
                         <p className="hint">
                             Each name opens on one device only. If yours says it's already been opened and it wasn't you,
-                            ask the organiser to reset it.
+                            ask the group organiser to reset it.
                         </p>
                     </form>
                     <div className={`stack confirm ${layer('confirm')}`} inert={off('confirm')}>
@@ -207,6 +232,22 @@ function Reveal({groupId, draw, people, onRevealed}: {groupId: string, draw: Dra
 // as any could be)
 function longest(people: Person[]): string {
     return people.reduce((most, p) => p.name.length > most.length ? p.name : most, '')
+}
+
+// While the names are still to be drawn, or once someone has theirs, the
+// nudge to run one for their other lot (left out for the organiser, who
+// already knows).
+function StartYourOwn({heading}: {heading: string}) {
+    return (
+        <aside className="card card-green start-your-own">
+            <h2>{heading}</h2>
+            <p>
+                Work, friends, the other side of the family: start a Secret Santa of your own. It takes a
+                couple of minutes, and nobody needs an account.
+            </p>
+            <Link href={paths.create} className="button button-primary">Start your own Secret Santa</Link>
+        </aside>
+    )
 }
 
 function Results({draw, nameOf}: {draw: Draw, nameOf: (id: string) => string}) {
